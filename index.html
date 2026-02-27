@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    
+    <!-- عنوان الموقع -->
+    <title>منصة الخدمة المجتمعية - تطوع وكن جزءاً من التغيير</title>
+    
+    <!-- وصف الموقع لمحركات البحث -->
+    <meta name="description" content="منصة الخدمة المجتمعية - نربط بين المتطوعين والفرص التطوعية لبناء مجتمع أفضل وأكثر تكافلاً" />
+    
+    <!-- الكلمات المفتاحية -->
+    <meta name="keywords" content="تطوع, خدمة مجتمعية, مساعدة, تبرع, عمل خيري, الأردن" />
+    
+    <!-- خط عربي من Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+    
+    <style>
+      /* تطبيق الخط العربي على كامل الموقع */
+      body {
+        font-family: 'Cairo', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      }
+      
+      /* إخفاء شاشة التحميل بعد تحميل الصفحة */
+      #loading-screen {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+        transition: opacity 0.5s ease-out;
+      }
+      
+      #loading-screen.hidden {
+        opacity: 0;
+        pointer-events: none;
+      }
+      
+      .spinner {
+        width: 50px;
+        height: 50px;
+        border: 4px solid rgba(16, 185, 129, 0.2);
+        border-top-color: #10b981;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+      
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+      
+      /* منع الفلاش الأبيض عند التحميل */
+      html {
+        background-color: #f8fafc;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- شاشة التحميل -->
+    <div id="loading-screen">
+      <div style="text-align: center;">
+        <div class="spinner"></div>
+        <p style="color: white; margin-top: 20px; font-size: 18px;">جاري التحميل...</p>
+      </div>
+    </div>
+    
+    <!-- المحتوى الرئيسي -->
+    <div id="root"></div>
+    
+    <!-- سكريبت React -->
+    <script type="module" src="/src/main.jsx"></script>
+    
+    <!-- إخفاء شاشة التحميل بعد تحميل الصفحة -->
+    <script>
+      window.addEventListener('load', () => {
+        setTimeout(() => {
+          document.getElementById('loading-screen').classList.add('hidden');
+        }, 500);
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,17 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+body {
+  margin: 0;
+  background: #f6f7fb;
+  font-family: 'Cairo', Arial, sans-serif;
+}
+
+header {
+  background: #fff;
+  box-shadow: 0 2px 8px #eee;
+  padding: 0 0 12px 0;
+}
+
+
+
