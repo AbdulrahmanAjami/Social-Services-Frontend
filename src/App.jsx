@@ -8,6 +8,7 @@ import Profile from "./Profile.jsx";
 import MyApplications from "./MyApplications.jsx";
 import TeamMembers from './TeamMembers';
 import Contact from './contactus.jsx';
+import VolunteerOfTheMonth from './Volunteerofthemonth.jsx';
 
 // Protected Route
 const ProtectedRoute = ({ children }) => {
@@ -30,6 +31,7 @@ function App() {
           <Route path="/register" element={<Register />} />
           <Route path="/about/team" element={<TeamMembers />} />
           <Route path="/contact" element={<Contact/>} />
+          <Route path="/VolunteerOfTheMonth" element={<VolunteerOfTheMonth/>} />
 
           {/* Protected Routes */}
           <Route 

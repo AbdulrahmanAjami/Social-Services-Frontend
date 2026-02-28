@@ -77,8 +77,8 @@ const Mainpage = () => {
       ]
     },
     { 
-      name: 'قصص النجاح', 
-      path: '/success-stories', 
+      name: 'متطوعينا المميزين', 
+      path: '/VolunteerOfTheMonth', 
       icon: Trophy 
     },
     { 
