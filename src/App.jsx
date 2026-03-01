@@ -9,6 +9,7 @@ import MyApplications from "./MyApplications.jsx";
 import TeamMembers from './TeamMembers';
 import Contact from './contactus.jsx';
 import VolunteerOfTheMonth from './Volunteerofthemonth.jsx';
+import VisionMission from './Visionmission.jsx';
 
 // Protected Route
 const ProtectedRoute = ({ children }) => {
@@ -32,6 +33,7 @@ function App() {
           <Route path="/about/team" element={<TeamMembers />} />
           <Route path="/contact" element={<Contact/>} />
           <Route path="/VolunteerOfTheMonth" element={<VolunteerOfTheMonth/>} />
+          <Route path="/VisionMission" element={<VisionMission/>} />
 
           {/* Protected Routes */}
           <Route 

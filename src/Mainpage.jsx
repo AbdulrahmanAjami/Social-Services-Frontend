@@ -62,7 +62,7 @@ const Mainpage = () => {
       path: '/about', 
       icon: Info,
       dropdown: [
-        { name: 'رؤيتنا ورسالتنا', path: '/about/vision' },
+        { name: 'رؤيتنا ورسالتنا', path: '/VisionMission' },
         { name: 'فريق العمل', path: '/about/team' },
         { name: 'شركاؤنا', path: '/about/partners' }
       ]
