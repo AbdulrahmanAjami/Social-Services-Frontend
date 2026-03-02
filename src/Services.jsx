@@ -24,6 +24,24 @@ const JORDAN_CITIES = [
   "سحاب"
 ];
 
+// ✅ قائمة أنواع الخدمات (المهن)
+const SERVICE_TYPES = [
+  "تعليم وتدريس",
+  "برمجة وتطوير",
+  "تصميم وجرافيك",
+  "تصوير ومونتاج",
+  "استشارات قانونية",
+  "استشارات طبية",
+  "صيانة وإصلاح",
+  "نقل وتوصيل",
+  "تنظيف",
+  "طبخ وطعام",
+  "رعاية أطفال",
+  "رعاية مسنين",
+  "تطوع عام",
+  "أخرى"
+];
+
 function Services() {
   const navigate = useNavigate();
   const { user, accessToken } = useAuth();
@@ -33,6 +51,126 @@ function Services() {
   const [postsFromDB, setPostsFromDB] = useState([]);
   const [loading, setLoading] = useState(false);
   
+  // ✅ خدمات افتراضية للعرض
+  const [dummyServices] = useState([
+    {
+      postID: 1001,
+      postTitle: "زيارة مستشفى الأطفال",
+      description: "مبادرة لرسم البسمة على وجوه الأطفال المرضى وتقديم الهدايا والألعاب لهم. نحتاج متطوعين لقضاء وقت ممتع مع الأطفال",
+      imagePath: "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=800&q=80",
+      countyName: "عمّان",
+      postTypeName: "تطوعي",
+      authorName: "أحمد محمود",
+      professionName: "منسق مبادرات",
+      publishDateTime: "2024-03-01",
+      isComplete: false,
+      serviceType: "تطوع عام"
+    },
+    {
+      postID: 1002,
+      postTitle: "تصميم موقع إلكتروني",
+      description: "مطلوب مبرمج محترف لتصميم وتطوير موقع إلكتروني متكامل لشركة ناشئة. المشروع يتضمن تصميم واجهة المستخدم والبرمجة الخلفية",
+      imagePath: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=800&q=80",
+      countyName: "إربد",
+      postTypeName: "مدفوع",
+      authorName: "سارة العلي",
+      professionName: "مديرة مشاريع",
+      publishDateTime: "2024-03-02",
+      isComplete: false,
+      price: 250,
+      contactPhone: "0791234567",
+      contactEmail: "sara.ali@example.com",
+      serviceType: "برمجة وتطوير"
+    },
+    {
+      postID: 1003,
+      postTitle: "حملة تنظيف الحي",
+      description: "نبحث عن متطوعين للمساعدة في تنظيف الحي وزراعة الأشجار والورود لتجميل المنطقة وخلق بيئة أفضل",
+      imagePath: "https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?w=800&q=80",
+      countyName: "الزرقاء",
+      postTypeName: "تطوعي",
+      authorName: "محمد خالد",
+      professionName: "ناشط بيئي",
+      publishDateTime: "2024-03-03",
+      isComplete: false,
+      serviceType: "تطوع عام"
+    },
+    {
+      postID: 1004,
+      postTitle: "دروس خصوصية في الرياضيات",
+      description: "معلم رياضيات خبرة 10 سنوات يقدم دروس خصوصية لطلاب التوجيهي. شرح مبسط ومتابعة مستمرة مع حل واجبات",
+      imagePath: "https://images.unsplash.com/photo-1509228468518-180dd4864904?w=800&q=80",
+      countyName: "عمّان",
+      postTypeName: "مدفوع",
+      authorName: "عمر يوسف",
+      professionName: "معلم رياضيات",
+      publishDateTime: "2024-03-04",
+      isComplete: false,
+      price: 80,
+      contactPhone: "0797654321",
+      contactEmail: "omar.math@example.com",
+      serviceType: "تعليم وتدريس"
+    },
+    {
+      postID: 1005,
+      postTitle: "توزيع وجبات على المحتاجين",
+      description: "مبادرة إنسانية لتوزيع وجبات ساخنة على الأسر المحتاجة والمشردين في مختلف مناطق المدينة",
+      imagePath: "https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=800&q=80",
+      countyName: "السلط",
+      postTypeName: "تطوعي",
+      authorName: "فاطمة حسن",
+      professionName: "مسؤولة خيرية",
+      publishDateTime: "2024-03-05",
+      isComplete: false,
+      serviceType: "طبخ وطعام"
+    },
+    {
+      postID: 1006,
+      postTitle: "تصوير حفل زفاف",
+      description: "مصور محترف لتصوير حفلات الزفاف والمناسبات. خدمة شاملة تتضمن التصوير الفوتوغرافي والفيديو مع مونتاج احترافي",
+      imagePath: "https://images.unsplash.com/photo-1606800052052-a08af7148866?w=800&q=80",
+      countyName: "العقبة",
+      postTypeName: "مدفوع",
+      authorName: "زيد عبدالله",
+      professionName: "مصور فوتوغرافي",
+      publishDateTime: "2024-03-06",
+      isComplete: false,
+      price: 350,
+      contactPhone: "0799876543",
+      contactEmail: "zaid.photo@example.com",
+      serviceType: "تصوير ومونتاج"
+    },
+    {
+      postID: 1007,
+      postTitle: "تعليم الأطفال القراءة",
+      description: "برنامج تطوعي لتعليم الأطفال القراءة والكتابة بطرق مبتكرة وممتعة. نحتاج معلمين متطوعين",
+      imagePath: "https://images.unsplash.com/photo-1427504494785-3a9ca7044f45?w=800&q=80",
+      countyName: "إربد",
+      postTypeName: "تطوعي",
+      authorName: "ليلى محمود",
+      professionName: "معلمة",
+      publishDateTime: "2024-03-07",
+      isComplete: false,
+      serviceType: "تعليم وتدريس"
+    },
+    {
+      postID: 1008,
+      postTitle: "استشارة قانونية",
+      description: "محامي معتمد يقدم استشارات قانونية في مختلف المجالات: عقود، قضايا عمل، أحوال شخصية",
+      imagePath: "https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=800&q=80",
+      countyName: "عمّان",
+      postTypeName: "مدفوع",
+      authorName: "نور الدين",
+      professionName: "محامي",
+      publishDateTime: "2024-03-08",
+      isComplete: false,
+      price: 50,
+      contactPhone: "0795555555",
+      contactEmail: "nour.lawyer@example.com",
+      serviceType: "استشارات قانونية"
+    }
+  ]);
+  
   // States الأخرى
   const [selectedService, setSelectedService] = useState(null);
   const [showServiceModal, setShowServiceModal] = useState(false);
@@ -41,11 +179,22 @@ function Services() {
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const [selectedCity, setSelectedCity] = useState("الكل");
   const [activeTab, setActiveTab] = useState("all");
+  const [selectedProfession, setSelectedProfession] = useState("الكل"); // فلتر المهنة
 
   // ✅ States للتقديم على خدمة
   const [showApplyModal, setShowApplyModal] = useState(false);
   const [applyMessage, setApplyMessage] = useState('');
   const [applyingToPost, setApplyingToPost] = useState(null);
+
+  // ✅ States للدفع (للخدمات المدفوعة)
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState('full'); // 'full' or 'partial'
+  const [cardDetails, setCardDetails] = useState({
+    cardNumber: '',
+    cardName: '',
+    expiryDate: '',
+    cvv: ''
+  });
 
   const [newPost, setNewPost] = useState({
     PostTitle: '',
@@ -55,7 +204,13 @@ function Services() {
     imagePath: '',
     PublishDate: new Date().toISOString().split('T')[0],
     Status: 1,
-    isComplete: false
+    isComplete: false,
+    // ✅ حقول إضافية للخدمات المدفوعة
+    price: '',
+    contactPhone: '',
+    contactEmail: '',
+    // ✅ نوع الخدمة (المهنة)
+    serviceType: ''
   });
 
   // جلب الخدمات عند تحميل الصفحة
@@ -78,14 +233,18 @@ function Services() {
       if (response.ok) {
         const data = await response.json();
         console.log("Posts from DB:", data);
-        setPostsFromDB(Array.isArray(data) ? data : []);
+        // ✅ دمج الخدمات من DB مع الخدمات الافتراضية
+        const dbPosts = Array.isArray(data) ? data : [];
+        setPostsFromDB([...dummyServices, ...dbPosts]);
       } else {
         console.error("Failed to fetch posts, status:", response.status);
-        setPostsFromDB([]);
+        // ✅ في حالة الفشل، اعرض الخدمات الافتراضية فقط
+        setPostsFromDB(dummyServices);
       }
     } catch (error) {
       console.error("Error fetching posts:", error);
-      setPostsFromDB([]);
+      // ✅ في حالة الخطأ، اعرض الخدمات الافتراضية فقط
+      setPostsFromDB(dummyServices);
     } finally {
       setLoading(false);
     }
@@ -98,9 +257,37 @@ function Services() {
       return;
     }
 
-    if (!newPost.PostTitle || !newPost.Description) {
-      alert("⚠️ الرجاء ملء جميع الحقول المطلوبة");
+    if (!newPost.PostTitle || !newPost.Description || !newPost.serviceType) {
+      alert("⚠️ الرجاء ملء جميع الحقول المطلوبة (العنوان، الوصف، نوع الخدمة)");
       return;
+    }
+
+    // ✅ التحقق من الحقول الإضافية للخدمات المدفوعة
+    if (newPost.TypeID === 2) {
+      if (!newPost.price || !newPost.contactPhone || !newPost.contactEmail) {
+        alert("⚠️ الرجاء ملء جميع حقول الخدمة المدفوعة (السعر، الهاتف، البريد الإلكتروني)");
+        return;
+      }
+      
+      // التحقق من صحة رقم الهاتف الأردني
+      const phoneRegex = /^07[789]\d{7}$/;
+      if (!phoneRegex.test(newPost.contactPhone)) {
+        alert("⚠️ رقم الهاتف غير صحيح. يجب أن يبدأ بـ 077 أو 078 أو 079 ويتكون من 10 أرقام");
+        return;
+      }
+
+      // التحقق من صحة البريد الإلكتروني
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(newPost.contactEmail)) {
+        alert("⚠️ البريد الإلكتروني غير صحيح");
+        return;
+      }
+
+      // التحقق من أن السعر أكبر من صفر
+      if (parseFloat(newPost.price) <= 0) {
+        alert("⚠️ السعر يجب أن يكون أكبر من صفر");
+        return;
+      }
     }
 
     setLoading(true);
@@ -114,7 +301,14 @@ function Services() {
         imagePath: newPost.imagePath.trim() || null,
         PublishDate: new Date().toISOString().split('T')[0],
         Status: 1,
-        isComplete: false
+        isComplete: false,
+        serviceType: newPost.serviceType, // ✅ نوع الخدمة
+        // ✅ إضافة الحقول الإضافية للخدمات المدفوعة
+        ...(newPost.TypeID === 2 && {
+          price: parseFloat(newPost.price),
+          contactPhone: newPost.contactPhone.trim(),
+          contactEmail: newPost.contactEmail.trim()
+        })
       };
 
       const response = await fetch(`${API_BASE_URL}/Posts/CreatePost`, {
@@ -137,7 +331,10 @@ function Services() {
           imagePath: '',
           PublishDate: new Date().toISOString().split('T')[0],
           Status: 1,
-          isComplete: false
+          isComplete: false,
+          price: '',
+          contactPhone: '',
+          contactEmail: ''
         });
         
         setShowSuccessMessage(true);
@@ -171,6 +368,14 @@ function Services() {
 
     if (!applyingToPost) return;
 
+    // ✅ إذا كانت خدمة مدفوعة، اعرض modal الدفع
+    if (applyingToPost.postTypeName === "مدفوع" || applyingToPost.price) {
+      setShowApplyModal(false);
+      setShowPaymentModal(true);
+      return;
+    }
+
+    // للخدمات التطوعية، تابع كالمعتاد
     setLoading(true);
 
     try {
@@ -208,6 +413,69 @@ function Services() {
     }
   };
 
+  // ✅ دالة معالجة الدفع
+  const handlePayment = async () => {
+    // التحقق من صحة البيانات
+    if (!cardDetails.cardNumber || !cardDetails.cardName || !cardDetails.expiryDate || !cardDetails.cvv) {
+      alert('⚠️ الرجاء ملء جميع بيانات البطاقة');
+      return;
+    }
+
+    // التحقق من رقم البطاقة (16 رقم)
+    if (cardDetails.cardNumber.replace(/\s/g, '').length !== 16) {
+      alert('⚠️ رقم البطاقة يجب أن يكون 16 رقم');
+      return;
+    }
+
+    // التحقق من CVV (3 أرقام)
+    if (cardDetails.cvv.length !== 3) {
+      alert('⚠️ رمز الأمان يجب أن يكون 3 أرقام');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      // محاكاة عملية الدفع
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      const amount = paymentMethod === 'full' ? applyingToPost.price : 5;
+      
+      // بعد نجاح الدفع، قدم على الخدمة
+      const applicationData = {
+        PostID: applyingToPost.postID,
+        Description: applyMessage.trim() || null,
+        PaymentAmount: amount,
+        PaymentMethod: paymentMethod
+      };
+
+      const response = await fetch(`${API_BASE_URL}/Services/apply`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(applicationData)
+      });
+
+      if (response.ok) {
+        setShowPaymentModal(false);
+        setApplyMessage('');
+        setApplyingToPost(null);
+        setCardDetails({ cardNumber: '', cardName: '', expiryDate: '', cvv: '' });
+        setPaymentMethod('full');
+        alert(`✅ تم الدفع بنجاح (${amount} دينار) وتم التقديم على الخدمة!`);
+      } else {
+        alert('❌ فشل التقديم على الخدمة');
+      }
+    } catch (error) {
+      console.error('Error processing payment:', error);
+      alert('❌ حدث خطأ في عملية الدفع');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleCardClick = (service) => {
     setSelectedService(service);
     setShowServiceModal(true);
@@ -215,7 +483,7 @@ function Services() {
 
   // ✅ تصفية الخدمات حسب الفلاتر المحددة
   const filteredPosts = postsFromDB.filter(post => {
-    // فلتر حسب النوع
+    // فلتر حسب النوع (تطوعي/مدفوع)
     if (activeTab === "voluntary" && post.postTypeName !== "تطوعي") {
       return false;
     }
@@ -225,6 +493,11 @@ function Services() {
     
     // فلتر حسب المدينة
     if (selectedCity !== "الكل" && post.countyName !== selectedCity) {
+      return false;
+    }
+    
+    // ✅ فلتر حسب نوع الخدمة (المهنة)
+    if (selectedProfession !== "الكل" && post.serviceType !== selectedProfession) {
       return false;
     }
     
@@ -344,7 +617,7 @@ function Services() {
           </div>
 
           {/* City Filter */}
-          <div>
+          <div className="flex gap-4">
             <select
               value={selectedCity}
               onChange={(e) => setSelectedCity(e.target.value)}
@@ -353,6 +626,18 @@ function Services() {
               <option value="الكل">🌍 جميع المدن</option>
               {JORDAN_CITIES.map(city => (
                 <option key={city} value={city}>📍 {city}</option>
+              ))}
+            </select>
+
+            {/* ✅ Service Type Filter */}
+            <select
+              value={selectedProfession}
+              onChange={(e) => setSelectedProfession(e.target.value)}
+              className="px-8 py-3 rounded-xl border-2 border-slate-300 font-bold cursor-pointer outline-none focus:border-emerald-500 transition-all shadow-lg bg-white hover:border-emerald-400 min-w-[200px]"
+            >
+              <option value="الكل">💼 جميع أنواع الخدمات</option>
+              {SERVICE_TYPES.map(type => (
+                <option key={type} value={type}>🔹 {type}</option>
               ))}
             </select>
           </div>
@@ -382,7 +667,8 @@ function Services() {
                     author: post.authorName,
                     profession: post.professionName,
                     publishDate: new Date(post.publishDateTime).toLocaleDateString('ar-JO'),
-                    isComplete: post.isComplete
+                    isComplete: post.isComplete,
+                    price: post.price || 0
                   }}
                   onClick={() => handleCardClick(post)}
                 />
@@ -391,6 +677,7 @@ function Services() {
               <div className="col-span-full text-center py-20">
                 <div className="text-slate-300 text-7xl mb-6">📋</div>
                 <p className="text-slate-600 text-xl font-bold mb-4">لا توجد خدمات متاحة حالياً</p>
+                <p className="text-slate-500 mb-8">جرّب تغيير الفلاتر أو</p>
                 {isLoggedIn && (
                   <button
                     onClick={() => setShowAddPostModal(true)}
@@ -407,9 +694,9 @@ function Services() {
 
       {/* MODAL: إضافة خدمة */}
       {showAddPostModal && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
-            <div className="sticky top-0 bg-gradient-to-r from-emerald-500 to-teal-500 px-8 py-6 flex justify-between items-center">
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl max-w-2xl w-full my-8 shadow-2xl">
+            <div className="sticky top-0 bg-gradient-to-r from-emerald-500 to-teal-500 px-8 py-6 flex justify-between items-center rounded-t-3xl z-10">
               <h2 className="text-2xl font-bold text-white">إضافة خدمة جديدة</h2>
               <button
                 onClick={() => {
@@ -422,7 +709,11 @@ function Services() {
                     imagePath: '',
                     PublishDate: new Date().toISOString().split('T')[0],
                     Status: 1,
-                    isComplete: false
+                    isComplete: false,
+                    price: '',
+                    contactPhone: '',
+                    contactEmail: '',
+                    serviceType: ''
                   });
                 }}
                 className="text-white hover:text-slate-200 text-3xl font-light w-10 h-10 flex items-center justify-center hover:bg-white/20 rounded-xl transition-all"
@@ -431,7 +722,7 @@ function Services() {
               </button>
             </div>
 
-            <div className="p-8 space-y-6">
+            <div className="p-8 space-y-6 max-h-[calc(100vh-200px)] overflow-y-auto">
               <div>
                 <label className="block text-slate-700 font-bold mb-2">
                   عنوان الخدمة <span className="text-rose-500">*</span>
@@ -457,6 +748,23 @@ function Services() {
                 />
               </div>
 
+              {/* ✅ نوع الخدمة (المهنة) */}
+              <div>
+                <label className="block text-slate-700 font-bold mb-2">
+                  نوع الخدمة <span className="text-rose-500">*</span>
+                </label>
+                <select
+                  value={newPost.serviceType}
+                  onChange={(e) => setNewPost({...newPost, serviceType: e.target.value})}
+                  className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 outline-none transition-all"
+                >
+                  <option value="">اختر نوع الخدمة</option>
+                  {SERVICE_TYPES.map(type => (
+                    <option key={type} value={type}>{type}</option>
+                  ))}
+                </select>
+              </div>
+
               <div>
                 <label className="block text-slate-700 font-bold mb-2">
                   نوع الخدمة
@@ -470,6 +778,55 @@ function Services() {
                   <option value="2">مدفوع</option>
                 </select>
               </div>
+
+              {/* ✅ حقول إضافية للخدمات المدفوعة فقط */}
+              {newPost.TypeID === 2 && (
+                <>
+                  <div className="bg-gradient-to-r from-yellow-50 to-amber-50 rounded-2xl p-6 border-2 border-yellow-200 space-y-4">
+                    <h3 className="text-lg font-bold text-slate-800 mb-4">📋 معلومات الخدمة المدفوعة</h3>
+                    
+                    <div>
+                      <label className="block text-slate-700 font-bold mb-2">
+                        السعر التقديري (بالدينار) <span className="text-rose-500">*</span>
+                      </label>
+                      <input
+                        type="number"
+                        value={newPost.price}
+                        onChange={(e) => setNewPost({...newPost, price: e.target.value})}
+                        className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-yellow-500 focus:ring-4 focus:ring-yellow-100 outline-none transition-all"
+                        placeholder="مثال: 100"
+                        min="0"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-700 font-bold mb-2">
+                        رقم الهاتف للتواصل <span className="text-rose-500">*</span>
+                      </label>
+                      <input
+                        type="tel"
+                        value={newPost.contactPhone}
+                        onChange={(e) => setNewPost({...newPost, contactPhone: e.target.value})}
+                        className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-yellow-500 focus:ring-4 focus:ring-yellow-100 outline-none transition-all"
+                        placeholder="07XXXXXXXX"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-700 font-bold mb-2">
+                        البريد الإلكتروني للتواصل <span className="text-rose-500">*</span>
+                      </label>
+                      <input
+                        type="email"
+                        value={newPost.contactEmail}
+                        onChange={(e) => setNewPost({...newPost, contactEmail: e.target.value})}
+                        className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-yellow-500 focus:ring-4 focus:ring-yellow-100 outline-none transition-all"
+                        placeholder="example@email.com"
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
 
               <div>
                 <label className="block text-slate-700 font-bold mb-2">
@@ -540,7 +897,11 @@ function Services() {
                     imagePath: '',
                     PublishDate: new Date().toISOString().split('T')[0],
                     Status: 1,
-                    isComplete: false
+                    isComplete: false,
+                    price: '',
+                    contactPhone: '',
+                    contactEmail: '',
+                    serviceType: ''
                   });
                 }}
                 disabled={loading}
@@ -597,6 +958,217 @@ function Services() {
                 >
                   إلغاء
                 </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ✅ MODAL: الدفع (للخدمات المدفوعة) */}
+      {showPaymentModal && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl max-w-lg w-full shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-gradient-to-r from-yellow-400 to-amber-500 px-8 py-6 rounded-t-3xl">
+              <h2 className="text-2xl font-bold text-white">💳 الدفع الآمن</h2>
+              <p className="text-yellow-50 text-sm mt-1">معلوماتك محمية بالكامل</p>
+            </div>
+
+            <div className="p-8 space-y-6">
+              {/* معلومات الخدمة */}
+              <div className="bg-gradient-to-r from-yellow-50 to-amber-50 rounded-2xl p-6 border-2 border-yellow-200">
+                <h3 className="text-lg font-bold text-slate-800 mb-2">
+                  {applyingToPost?.postTitle}
+                </h3>
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-600 font-semibold">السعر الإجمالي:</span>
+                  <span className="text-2xl font-black text-amber-600">{applyingToPost?.price} دينار</span>
+                </div>
+              </div>
+
+              {/* خيارات الدفع */}
+              <div>
+                <label className="block text-slate-700 font-bold mb-4">اختر طريقة الدفع:</label>
+                <div className="space-y-3">
+                  <label className={`flex items-start gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                    paymentMethod === 'full' 
+                      ? 'border-emerald-500 bg-emerald-50' 
+                      : 'border-slate-200 hover:border-emerald-300'
+                  }`}>
+                    <input
+                      type="radio"
+                      name="paymentMethod"
+                      value="full"
+                      checked={paymentMethod === 'full'}
+                      onChange={(e) => setPaymentMethod(e.target.value)}
+                      className="mt-1"
+                    />
+                    <div className="flex-1">
+                      <p className="font-bold text-slate-800">💰 دفع المبلغ كاملاً</p>
+                      <p className="text-sm text-slate-600">ادفع {applyingToPost?.price} دينار الآن</p>
+                    </div>
+                  </label>
+
+                  <label className={`flex items-start gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                    paymentMethod === 'partial' 
+                      ? 'border-emerald-500 bg-emerald-50' 
+                      : 'border-slate-200 hover:border-emerald-300'
+                  }`}>
+                    <input
+                      type="radio"
+                      name="paymentMethod"
+                      value="partial"
+                      checked={paymentMethod === 'partial'}
+                      onChange={(e) => setPaymentMethod(e.target.value)}
+                      className="mt-1"
+                    />
+                    <div className="flex-1">
+                      <p className="font-bold text-slate-800">📊 دفع جزئي</p>
+                      <p className="text-sm text-slate-600">ادفع 5 دنانير الآن والباقي ({applyingToPost?.price - 5} دينار) بعد إنهاء الخدمة</p>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              {/* بيانات البطاقة */}
+              <div className="space-y-4">
+                <h4 className="font-bold text-slate-700">بيانات البطاقة:</h4>
+                
+                <div>
+                  <label className="block text-slate-700 font-semibold mb-2">
+                    رقم البطاقة <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={cardDetails.cardNumber}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/\D/g, '');
+                      const formatted = value.match(/.{1,4}/g)?.join(' ') || value;
+                      if (value.length <= 16) {
+                        setCardDetails({...cardDetails, cardNumber: formatted});
+                      }
+                    }}
+                    className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-yellow-500 focus:ring-4 focus:ring-yellow-100 outline-none transition-all font-mono"
+                    placeholder="1234 5678 9012 3456"
+                    maxLength="19"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-700 font-semibold mb-2">
+                    اسم حامل البطاقة <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={cardDetails.cardName}
+                    onChange={(e) => setCardDetails({...cardDetails, cardName: e.target.value})}
+                    className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-yellow-500 focus:ring-4 focus:ring-yellow-100 outline-none transition-all"
+                    placeholder="الاسم كما هو على البطاقة"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-slate-700 font-semibold mb-2">
+                      تاريخ الانتهاء <span className="text-rose-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={cardDetails.expiryDate}
+                      onChange={(e) => {
+                        let value = e.target.value.replace(/\D/g, '');
+                        if (value.length >= 2) {
+                          value = value.slice(0, 2) + '/' + value.slice(2, 4);
+                        }
+                        if (value.length <= 5) {
+                          setCardDetails({...cardDetails, expiryDate: value});
+                        }
+                      }}
+                      className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-yellow-500 focus:ring-4 focus:ring-yellow-100 outline-none transition-all font-mono"
+                      placeholder="MM/YY"
+                      maxLength="5"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-700 font-semibold mb-2">
+                      CVV <span className="text-rose-500">*</span>
+                    </label>
+                    <input
+                      type="password"
+                      value={cardDetails.cvv}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/\D/g, '');
+                        if (value.length <= 3) {
+                          setCardDetails({...cardDetails, cvv: value});
+                        }
+                      }}
+                      className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-yellow-500 focus:ring-4 focus:ring-yellow-100 outline-none transition-all font-mono"
+                      placeholder="123"
+                      maxLength="3"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* ملخص الدفع */}
+              <div className="bg-slate-50 rounded-2xl p-6 border-2 border-slate-200">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-slate-700 font-semibold">المبلغ المطلوب الآن:</span>
+                  <span className="text-2xl font-black text-emerald-600">
+                    {paymentMethod === 'full' ? applyingToPost?.price : 5} دينار
+                  </span>
+                </div>
+                {paymentMethod === 'partial' && (
+                  <div className="flex items-center justify-between text-sm text-slate-600">
+                    <span>المبلغ المتبقي:</span>
+                    <span className="font-bold">{applyingToPost?.price - 5} دينار</span>
+                  </div>
+                )}
+              </div>
+
+              {/* أزرار */}
+              <div className="flex gap-3 pt-4">
+                <button
+                  onClick={handlePayment}
+                  disabled={loading}
+                  className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white py-4 rounded-xl font-bold transition-all disabled:opacity-50 shadow-lg flex items-center justify-center gap-2"
+                >
+                  {loading ? (
+                    <>
+                      <div className="w-5 h-5 border-3 border-white border-t-transparent rounded-full animate-spin"></div>
+                      جاري المعالجة...
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      تأكيد الدفع
+                    </>
+                  )}
+                </button>
+                <button
+                  onClick={() => {
+                    setShowPaymentModal(false);
+                    setShowApplyModal(true);
+                    setCardDetails({ cardNumber: '', cardName: '', expiryDate: '', cvv: '' });
+                    setPaymentMethod('full');
+                  }}
+                  disabled={loading}
+                  className="px-6 py-4 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-xl font-bold transition-all"
+                >
+                  رجوع
+                </button>
+              </div>
+
+              {/* رسالة أمان */}
+              <div className="flex items-start gap-3 text-sm text-slate-600 bg-blue-50 p-4 rounded-xl border border-blue-200">
+                <svg className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+                <p className="leading-relaxed">
+                  <strong className="text-blue-800">🔒 دفع آمن:</strong> جميع معلوماتك مشفرة بتقنية SSL ولن يتم مشاركتها مع أي طرف ثالث
+                </p>
               </div>
             </div>
           </div>
@@ -735,6 +1307,51 @@ function Services() {
               <p className="text-slate-700 mb-8 leading-relaxed">
                 {selectedService.description || selectedService.desc}
               </p>
+
+              {/* ✅ معلومات التواصل للخدمات المدفوعة */}
+              {selectedService.postTypeName === "مدفوع" && (selectedService.contactPhone || selectedService.contactEmail) && (
+                <div className="bg-gradient-to-r from-yellow-50 to-amber-50 rounded-2xl p-6 border-2 border-yellow-200 mb-6">
+                  <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                    <span className="text-2xl">📞</span>
+                    للتواصل مع مقدم الخدمة:
+                  </h3>
+                  <div className="space-y-3">
+                    {selectedService.contactPhone && (
+                      <a 
+                        href={`tel:${selectedService.contactPhone}`}
+                        className="flex items-center gap-3 bg-white px-4 py-3 rounded-xl hover:bg-yellow-50 transition-all group"
+                      >
+                        <div className="w-10 h-10 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
+                          <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                          </svg>
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-xs text-slate-500 font-semibold">رقم الهاتف</p>
+                          <p className="text-slate-800 font-bold text-lg direction-ltr text-right">{selectedService.contactPhone}</p>
+                        </div>
+                      </a>
+                    )}
+                    
+                    {selectedService.contactEmail && (
+                      <a 
+                        href={`mailto:${selectedService.contactEmail}`}
+                        className="flex items-center gap-3 bg-white px-4 py-3 rounded-xl hover:bg-yellow-50 transition-all group"
+                      >
+                        <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-cyan-500 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
+                          <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                          </svg>
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-xs text-slate-500 font-semibold">البريد الإلكتروني</p>
+                          <p className="text-slate-800 font-bold">{selectedService.contactEmail}</p>
+                        </div>
+                      </a>
+                    )}
+                  </div>
+                </div>
+              )}
               
               {/* ✅ زر التقديم على الخدمة */}
               {!selectedService.isComplete && isLoggedIn && (
@@ -744,12 +1361,14 @@ function Services() {
                     setShowServiceModal(false);
                     setApplyingToPost({
                       postID: selectedService.postID,
-                      postTitle: selectedService.postTitle
+                      postTitle: selectedService.postTitle,
+                      postTypeName: selectedService.postTypeName,
+                      price: selectedService.price || 0
                     });
                     setShowApplyModal(true);
                   }}
                 >
-                  التقديم للخدمة
+                  {selectedService.postTypeName === "مدفوع" ? '💳 التقديم والدفع' : 'التقديم للخدمة'}
                 </button>
               )}
               
@@ -802,6 +1421,14 @@ function ServiceCard({ service, onClick }) {
           <span className="absolute top-3 left-3 bg-emerald-500 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-xl">
             مكتملة ✓
           </span>
+        )}
+        {/* ✅ عرض السعر للخدمات المدفوعة */}
+        {isPaid && service.price && (
+          <div className="absolute bottom-3 left-3 bg-white/95 backdrop-blur-sm px-4 py-2 rounded-xl shadow-xl">
+            <span className="text-2xl font-black bg-gradient-to-r from-yellow-600 to-amber-600 bg-clip-text text-transparent">
+              {service.price} د.أ
+            </span>
+          </div>
         )}
       </div>
 
