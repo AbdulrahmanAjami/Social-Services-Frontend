@@ -15,6 +15,7 @@ import {
   CheckCircle,
   AlertCircle
 } from 'lucide-react';
+import { ButtonSkeleton } from './components/Skeleton';
 
 const Contact = () => {
   const navigate = useNavigate();
@@ -270,7 +271,7 @@ const Contact = () => {
                 >
                   {loading ? (
                     <>
-                      <div className="w-6 h-6 border-3 border-white border-t-transparent rounded-full animate-spin"></div>
+                      <ButtonSkeleton />
                       جاري الإرسال...
                     </>
                   ) : (

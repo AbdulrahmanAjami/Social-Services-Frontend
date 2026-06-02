@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Lock, User, Eye, EyeOff, LogIn, Handshake, Sparkles, AlertCircle, Check } from 'lucide-react';
 import { useAuth } from './AuthContext';
+import { ButtonSkeleton } from './components/Skeleton';
 
 const API_BASE_URL = 'https://localhost:7244/api';
 
@@ -23,7 +24,8 @@ const Login = () => {
     setLoading(true);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/Authentication/Login`, {
+      const 
+      response = await fetch(`${API_BASE_URL}/Authentication/Login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -34,12 +36,13 @@ const Login = () => {
         })
       });
 
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || 'Invalid username or password');
+      }
+
       const data = await response.json();
       console.log("API Response:", data);
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Invalid username or password');
-      }
 
       // حفظ بيانات المستخدم 
       const userData = {
@@ -233,7 +236,7 @@ const Login = () => {
             >
               {loading ? (
                 <>
-                  <div className="w-6 h-6 border-3 border-white border-t-transparent rounded-full animate-spin"></div>
+                  <ButtonSkeleton />
                   جاري تسجيل الدخول...
                 </>
               ) : success ? (

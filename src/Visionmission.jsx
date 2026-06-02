@@ -10,49 +10,17 @@ import {
   Users,
   Heart,
   CheckCircle,
-  Send,
-  MessageSquare,
   Lightbulb,
   Star,
   TrendingUp,
   Gift,
-  Lock,
   FileCheck,
-  DollarSign,
   UserCheck,
   AlertCircle
 } from 'lucide-react';
 
 const VisionMission = () => {
   const navigate = useNavigate();
-  const [suggestion, setSuggestion] = useState({
-    name: '',
-    email: '',
-    message: ''
-  });
-  const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
-  const [error, setError] = useState('');
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    if (!suggestion.name || !suggestion.email || !suggestion.message) {
-      setError('الرجاء ملء جميع الحقول');
-      setTimeout(() => setError(''), 3000);
-      return;
-    }
-
-    setLoading(true);
-    
-    // محاكاة إرسال الاقتراح
-    setTimeout(() => {
-      setSuccess(true);
-      setLoading(false);
-      setSuggestion({ name: '', email: '', message: '' });
-      setTimeout(() => setSuccess(false), 5000);
-    }, 1500);
-  };
 
   const features = [
     {
@@ -71,14 +39,7 @@ const VisionMission = () => {
       bgColor: 'from-blue-50 to-cyan-50',
       borderColor: 'border-blue-200'
     },
-    {
-      icon: DollarSign,
-      title: 'خدمات مدفوعة آمنة',
-      description: 'نظام دفع آمن يضمن حقوق جميع الأطراف مع إمكانية التحقق من مزودي الخدمات',
-      color: 'from-yellow-400 to-amber-500',
-      bgColor: 'from-yellow-50 to-amber-50',
-      borderColor: 'border-yellow-200'
-    },
+  
     {
       icon: Star,
       title: 'نظام تقييم شامل',
@@ -219,21 +180,8 @@ const VisionMission = () => {
                 </div>
               </div>
 
-              <div className="bg-gradient-to-r from-yellow-50 to-amber-50 rounded-2xl p-6 border-2 border-yellow-200 my-8">
-                <div className="flex items-start gap-4">
-                  <Lock className="w-6 h-6 text-amber-600 flex-shrink-0 mt-1" />
-                  <div>
-                    <h3 className="font-bold text-slate-800 mb-2">خدمات مدفوعة آمنة</h3>
-                    <p className="text-slate-700">
-                      نوفر ميزة <span className="font-bold">الخدمات المدفوعة</span> التي تربط صاحب الخدمة مع مزود الخدمة بشكل احترافي، 
-                      مع نظام <span className="font-bold text-amber-600">دفع آمن ومضمون</span> يحفظ حقوق جميع الأطراف
-                    </p>
-                  </div>
-                </div>
-              </div>
-
               <p>
-                يمكنك التأكد من <span className="font-bold text-purple-600">مزود الخدمة</span> قبل الموافقة عليه من خلال:
+                يمكنك التأكد من <span className="font-bold text-purple-600">المزود</span> قبل الموافقة عليه من خلال:
               </p>
 
               <ul className="space-y-3 mr-6">
@@ -316,100 +264,7 @@ const VisionMission = () => {
           </div>
         </div>
 
-        {/* Suggestions Box */}
-        <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl border border-slate-200/50 overflow-hidden">
-          <div className="bg-gradient-to-r from-emerald-500 to-teal-500 px-8 py-6">
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center">
-                <MessageSquare className="w-7 h-7 text-white" />
-              </div>
-              <div>
-                <h2 className="text-2xl font-black text-white">صندوق الاقتراحات</h2>
-                <p className="text-emerald-100 font-semibold">رأيك يهمنا جداً! شاركنا أفكارك واقتراحاتك</p>
-              </div>
-            </div>
-          </div>
 
-          <div className="p-8">
-            {success && (
-              <div className="mb-6 bg-emerald-50 border-2 border-emerald-500 rounded-2xl p-4 animate-fadeIn">
-                <div className="flex items-center gap-3">
-                  <CheckCircle className="w-6 h-6 text-emerald-500" />
-                  <p className="text-emerald-700 font-bold">شكراً لك! تم إرسال اقتراحك بنجاح. سنراجعه قريباً.</p>
-                </div>
-              </div>
-            )}
-
-            {error && (
-              <div className="mb-6 bg-rose-50 border-2 border-rose-500 rounded-2xl p-4 animate-fadeIn">
-                <div className="flex items-center gap-3">
-                  <AlertCircle className="w-6 h-6 text-rose-500" />
-                  <p className="text-rose-700 font-bold">{error}</p>
-                </div>
-              </div>
-            )}
-
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="grid md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-slate-700 font-bold mb-2">
-                    الاسم <span className="text-rose-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={suggestion.name}
-                    onChange={(e) => setSuggestion({...suggestion, name: e.target.value})}
-                    className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 outline-none transition-all"
-                    placeholder="أدخل اسمك"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-slate-700 font-bold mb-2">
-                    البريد الإلكتروني <span className="text-rose-500">*</span>
-                  </label>
-                  <input
-                    type="email"
-                    value={suggestion.email}
-                    onChange={(e) => setSuggestion({...suggestion, email: e.target.value})}
-                    className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 outline-none transition-all"
-                    placeholder="example@email.com"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-slate-700 font-bold mb-2">
-                  اقتراحك أو ملاحظتك <span className="text-rose-500">*</span>
-                </label>
-                <textarea
-                  value={suggestion.message}
-                  onChange={(e) => setSuggestion({...suggestion, message: e.target.value})}
-                  className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 outline-none h-40 resize-none transition-all"
-                  placeholder="شاركنا أفكارك واقتراحاتك لتحسين خدماتنا..."
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white py-4 rounded-xl font-bold text-lg transition-all transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
-              >
-                {loading ? (
-                  <>
-                    <div className="w-6 h-6 border-3 border-white border-t-transparent rounded-full animate-spin"></div>
-                    جاري الإرسال...
-                  </>
-                ) : (
-                  <>
-                    <Send className="w-6 h-6" />
-                    إرسال الاقتراح
-                  </>
-                )}
-              </button>
-            </form>
-          </div>
-        </div>
       </div>
 
       <style>{`

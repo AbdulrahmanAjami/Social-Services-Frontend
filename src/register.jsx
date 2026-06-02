@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { Upload, X, User, Mail, Lock, Phone, Calendar, Image as ImageIcon, Check, AlertCircle, Handshake, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { ButtonSkeleton } from './components/Skeleton';
 
 const Register = () => {
   const navigate = useNavigate();
@@ -520,7 +521,7 @@ const Register = () => {
             >
               {loading ? (
                 <>
-                  <div className="w-5 h-5 border-3 border-white border-t-transparent rounded-full animate-spin"></div>
+                  <ButtonSkeleton />
                   جاري التسجيل...
                 </>
               ) : success ? (

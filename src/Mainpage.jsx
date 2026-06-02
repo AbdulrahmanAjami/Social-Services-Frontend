@@ -69,11 +69,10 @@ const Mainpage = () => {
     },
     { 
       name: 'الخدمات', 
-      path: '/services', 
+      path: '/posts', 
       icon: Briefcase,
       dropdown: [
-        { name: 'خدمات تطوعية', path: '/Services' },
-        { name: 'خدمات مدفوعة', path: '/Services' }
+        { name: 'خدمات تطوعية', path: '/posts' }
       ]
     },
     { 
@@ -82,8 +81,8 @@ const Mainpage = () => {
       icon: Trophy 
     },
     { 
-      name: 'المدونة', 
-      path: '/blog', 
+      name: 'أقرب الخدمات', 
+      path: '/map', 
       icon: FileText 
     },
     { 
@@ -143,42 +142,6 @@ const Mainpage = () => {
       type: "تطوعي",
       volunteers: 67,
       date: "25 مارس 2026"
-    }
-  ];
-
-  const featuredServices = [
-    {
-      id: 1,
-      title: "دورة تدريبية في البرمجة",
-      description: "تعلم أساسيات البرمجة مع مدربين محترفين",
-      price: "50 دينار",
-      duration: "4 أسابيع",
-      image: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&q=80",
-      type: "مدفوع",
-      rating: 4.8,
-      students: 120
-    },
-    {
-      id: 2,
-      title: "استشارة قانونية",
-      description: "احصل على استشارة قانونية من محامين معتمدين",
-      price: "30 دينار",
-      duration: "ساعة واحدة",
-      image: "https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=800&q=80",
-      type: "مدفوع",
-      rating: 4.9,
-      students: 85
-    },
-    {
-      id: 3,
-      title: "ورشة تصميم جرافيك",
-      description: "تعلم أساسيات التصميم الجرافيكي بشكل احترافي",
-      price: "40 دينار",
-      duration: "3 أسابيع",
-      image: "https://images.unsplash.com/photo-1626785774573-4b799315345d?w=800&q=80",
-      type: "مدفوع",
-      rating: 4.7,
-      students: 95
     }
   ];
 
@@ -590,7 +553,7 @@ const Mainpage = () => {
               index === currentSlide ? 'opacity-100' : 'opacity-0'
             }`}
           >
-            <div className="absolute inset-0 bg-gradient-to-r from-slate-900/95 via-slate-900/80 to-slate-900/40 z-10" />
+            <div className="absolute inset-0 bg-gradient-to-l from-slate-900/80 via-slate-900/40 to-transparent z-10" />
             <img
               src={service.image}
               alt={service.title}
@@ -631,18 +594,11 @@ const Mainpage = () => {
                   </div>
                   <div className="flex gap-4 flex-wrap">
                     <button 
-                      onClick={() => handleNavigation('/services')}
+                      onClick={() => handleNavigation('/posts')}
                       className="bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 hover:from-emerald-600 hover:via-teal-600 hover:to-cyan-600 text-white px-10 py-5 rounded-2xl font-bold text-lg transition-all transform hover:scale-105 shadow-2xl flex items-center gap-3 group"
                     >
                       تطوع الآن
                       <ArrowLeft className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
-                    </button>
-                    <button 
-                      onClick={() => handleNavigation('/services')}
-                      className="bg-white/20 backdrop-blur-md hover:bg-white/30 text-white px-10 py-5 rounded-2xl font-bold text-lg transition-all border-2 border-white/40 hover:border-white/60 flex items-center gap-3 group"
-                    >
-                      <Play className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                      شاهد الفيديو
                     </button>
                   </div>
                 </div>
@@ -880,7 +836,7 @@ const Mainpage = () => {
                     </div>
 
                     <button 
-                      onClick={() => handleNavigation('/services')}
+                      onClick={() => handleNavigation('/posts')}
                       className="w-full bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 hover:from-emerald-600 hover:via-teal-600 hover:to-cyan-600 text-white py-4 rounded-2xl font-bold text-lg transition-all transform hover:scale-105 shadow-lg hover:shadow-2xl flex items-center justify-center gap-3 group/btn"
                     >
                       تطوع الآن
@@ -894,7 +850,7 @@ const Mainpage = () => {
 
           <div className="text-center">
             <button 
-              onClick={() => handleNavigation('/services')}
+              onClick={() => handleNavigation('/posts')}
               className="bg-slate-900 hover:bg-slate-800 text-white px-12 py-5 rounded-2xl font-bold text-xl transition-all transform hover:scale-105 shadow-2xl inline-flex items-center gap-3 group"
             >
               عرض جميع الخدمات التطوعية
@@ -929,102 +885,6 @@ const Mainpage = () => {
         </div>
       </div>
 
-      {/* Paid Services Section */}
-      <section className="py-24 bg-gradient-to-b from-slate-50 to-white relative overflow-hidden">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-20">
-            <div className="inline-flex items-center gap-2 bg-gradient-to-r from-yellow-100 to-amber-100 text-yellow-700 px-5 py-2.5 rounded-full mb-6 font-bold shadow-lg">
-              <Award className="w-5 h-5" />
-              خدمات مميزة
-            </div>
-            <h2 className="text-5xl md:text-6xl font-black text-slate-800 mb-6">الخدمات المدفوعة</h2>
-            <p className="text-slate-600 text-xl max-w-3xl mx-auto leading-relaxed">
-              خدمات احترافية بأسعار مناسبة من خبراء في مجالاتهم
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8 mb-16">
-            {featuredServices.map((service, index) => (
-              <div
-                key={service.id}
-                className="group relative animate-fadeInUp"
-                style={{ animationDelay: `${index * 100}ms` }}
-              >
-                {/* Glowing Effect */}
-                <div className="absolute inset-0 bg-gradient-to-br from-yellow-400/30 to-amber-400/30 rounded-3xl blur-2xl opacity-0 group-hover:opacity-100 transition-all duration-500"></div>
-                
-                {/* Card */}
-                <div className="relative bg-white rounded-3xl overflow-hidden shadow-xl hover:shadow-2xl transition-all transform hover:-translate-y-4 border border-slate-100">
-                  <div className="relative h-64 overflow-hidden">
-                    <img
-                      src={service.image}
-                      alt={service.title}
-                      className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700"
-                    />
-                    {/* Gradient Overlay */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-900/50 to-transparent"></div>
-                    
-                    <div className="absolute top-5 right-5">
-                      <span className="inline-flex items-center gap-2 bg-gradient-to-r from-yellow-400 to-amber-500 text-white px-4 py-2 rounded-full text-sm font-bold shadow-2xl">
-                        <Gift className="w-4 h-4" />
-                        {service.type}
-                      </span>
-                    </div>
-
-                    <div className="absolute bottom-5 left-5 bg-white/95 backdrop-blur-sm px-5 py-3 rounded-2xl shadow-2xl">
-                      <span className="text-3xl font-black bg-gradient-to-r from-yellow-600 to-amber-600 bg-clip-text text-transparent">{service.price}</span>
-                    </div>
-                  </div>
-
-                  <div className="p-8">
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-2xl font-black text-slate-800">
-                        {service.title}
-                      </h3>
-                      <div className="flex items-center gap-1 bg-yellow-50 px-3 py-2 rounded-xl">
-                        <Star className="w-5 h-5 text-yellow-500 fill-yellow-500" />
-                        <span className="text-sm font-black text-slate-800">{service.rating}</span>
-                      </div>
-                    </div>
-
-                    <p className="text-slate-600 mb-6 leading-relaxed">{service.description}</p>
-                    
-                    <div className="flex items-center justify-between mb-8 text-sm text-slate-600 font-semibold">
-                      <span className="flex items-center gap-2">
-                        <Clock className="w-5 h-5 text-yellow-500" />
-                        {service.duration}
-                      </span>
-                      <span className="flex items-center gap-2">
-                        <Users className="w-5 h-5 text-yellow-500" />
-                        {service.students} طالب
-                      </span>
-                    </div>
-
-                    <button 
-                      onClick={() => handleNavigation('/services')}
-                      className="w-full bg-gradient-to-r from-yellow-400 via-yellow-500 to-amber-500 hover:from-yellow-500 hover:via-yellow-600 hover:to-amber-600 text-white py-4 rounded-2xl font-bold text-lg transition-all transform hover:scale-105 shadow-lg hover:shadow-2xl"
-                    >
-                      احجز الآن
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="text-center">
-            <button 
-              onClick={() => handleNavigation('/services')}
-              className="bg-gradient-to-r from-yellow-400 to-amber-500 hover:from-yellow-500 hover:to-amber-600 text-white px-12 py-5 rounded-2xl font-bold text-xl transition-all transform hover:scale-105 shadow-2xl inline-flex items-center gap-3 group"
-            >
-              عرض جميع الخدمات المدفوعة
-              <ArrowLeft className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
-            </button>
-          </div>
-        </div>
-      </section>
-
-      {/* Testimonials Section */}
       <section className="py-24 bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 relative overflow-hidden">
         {/* Animated Background */}
         <div className="absolute inset-0 opacity-20">
@@ -1112,7 +972,7 @@ const Mainpage = () => {
               <ArrowLeft className="w-7 h-7 group-hover:translate-x-2 transition-transform" />
             </button>
             <button 
-              onClick={() => handleNavigation('/services')}
+              onClick={() => handleNavigation('/posts')}
               className="bg-white/10 backdrop-blur-md border-2 border-white/40 text-white px-14 py-6 rounded-2xl font-bold text-2xl hover:bg-white/20 transition-all inline-flex items-center gap-4 group"
             >
               <Play className="w-6 h-6 group-hover:scale-110 transition-transform" />

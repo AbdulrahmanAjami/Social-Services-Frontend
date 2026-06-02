@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User, ArrowRight, Trash2, Clock, CheckCircle, XCircle, Home } from 'lucide-react';
 import { useAuth } from './AuthContext';
+import { CardSkeleton } from './components/Skeleton';
 
 const API_BASE_URL = 'https://localhost:7244/api';
 
@@ -138,16 +139,15 @@ const MyApplications = () => {
       {/* CONTENT */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {loading ? (
-          <div className="text-center py-20">
-            <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-emerald-500 mx-auto"></div>
-            <p className="mt-6 text-white text-lg">جاري التحميل...</p>
+          <div className="py-8">
+            <CardSkeleton count={3} />
           </div>
         ) : applications.length === 0 ? (
           <div className="text-center py-20">
             <div className="text-slate-600 text-7xl mb-6">📋</div>
             <p className="text-slate-400 text-xl mb-6">لم تقدم على أي خدمات بعد</p>
             <button
-              onClick={() => navigate('/services')}
+              onClick={() => navigate('/posts')}
               className="bg-emerald-500 hover:bg-emerald-600 text-white px-8 py-3 rounded-lg font-bold transition-all"
             >
               تصفح الخدمات
