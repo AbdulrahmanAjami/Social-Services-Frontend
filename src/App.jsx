@@ -14,6 +14,9 @@ import Contact from './contactus.jsx';
 import VolunteerOfTheMonth from './Volunteerofthemonth.jsx';
 import VisionMission from './Visionmission.jsx';
 import Admin from './Admin.jsx';
+import AdminLogin from './AdminLogin.jsx';
+import BlockedPage from './BlockedPage.jsx';
+import VolunteerRegister from './VolunteerRegister.jsx';
 
 // Protected Route - يسمح لأي مستخدم مسجل دخول
 const ProtectedRoute = ({ children }) => {
@@ -26,21 +29,10 @@ const ProtectedRoute = ({ children }) => {
 
 // Admin Protected Route - يسمح فقط للمسؤول المحدد
 const AdminRoute = ({ children }) => {
-  const token = localStorage.getItem('accessToken');
-  const user = localStorage.getItem('user');
-  const ADMIN_USERNAME = 'aboodajami';
+  const adminToken = localStorage.getItem('adminToken');
   
-  if (!token) {
-    return <Navigate to="/login" replace />;
-  }
-  
-  try {
-    const userData = JSON.parse(user);
-    if (userData.username !== ADMIN_USERNAME) {
-      return <Navigate to="/" replace />;
-    }
-  } catch (error) {
-    return <Navigate to="/login" replace />;
+  if (!adminToken) {
+    return <Navigate to="/admin/login" replace />;
   }
   
   return children;
@@ -71,12 +63,33 @@ function App() {
           <Route path="/posts" element={<Posts />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/volunteer-register" element={<VolunteerRegister />} />
+          <Route path="/blocked" element={<BlockedPage />} />
           <Route path="/about/team" element={<Navigate to="/about/partners" replace />} />
           <Route path="/about/partners" element={<TeamMembers />} />
           <Route path="/contact" element={<Contact/>} />
           <Route path="/VolunteerOfTheMonth" element={<VolunteerOfTheMonth/>} />
           <Route path="/VisionMission" element={<VisionMission/>} />
           <Route path="/map" element={<MapPage/>} />
+
+          {/* Admin Routes (public login first) */}
+          <Route path="/admin/login" element={<AdminLogin />} />
+          <Route 
+            path="/admin/dashboard"
+            element={
+              <AdminRoute>
+                <Admin />
+              </AdminRoute>
+            }
+          />
+          <Route 
+            path="/admin" 
+            element={
+              <AdminRoute>
+                <Admin />
+              </AdminRoute>
+            } 
+          />
 
           {/* Protected Routes */}
           <Route 
@@ -97,15 +110,7 @@ function App() {
             } 
           />
 
-          {/* Admin Route */}
-          <Route 
-            path="/admin" 
-            element={
-              <AdminRoute>
-                <Admin />
-              </AdminRoute>
-            } 
-          />
+          
         </Routes>
 
         <button

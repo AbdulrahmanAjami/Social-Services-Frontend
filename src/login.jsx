@@ -1,39 +1,36 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Lock, User, Eye, EyeOff, LogIn, Handshake, Sparkles, AlertCircle, Check } from 'lucide-react';
+import { Lock, User, Eye, EyeOff, LogIn, HeartHandshake, AlertCircle, Check, ArrowLeft, Sparkles } from 'lucide-react';
 import { useAuth } from './AuthContext';
 import { ButtonSkeleton } from './components/Skeleton';
 
 const API_BASE_URL = 'https://localhost:7244/api';
 
+// ─── Shared input class ───────────────────────────────────────────────────────
+const INPUT = 'w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 disabled:opacity-60';
+
 const Login = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
-  const [formData, setFormData] = useState({
-    username: '',
-    password: ''
-  });
-  const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState(false);
 
+  // ── All state identical to original ──────────────────────────────────────
+  const [formData, setFormData] = useState({ username: '', password: '' });
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading]           = useState(false);
+  const [error, setError]               = useState('');
+  const [success, setSuccess]           = useState(false);
+
+  // ── handleSubmit identical to original ───────────────────────────────────
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
 
     try {
-      const 
-      response = await fetch(`${API_BASE_URL}/Authentication/Login`, {
+      const response = await fetch(`${API_BASE_URL}/Authentication/Login User`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          username: formData.username,
-          password: formData.password
-        })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: formData.username, password: formData.password }),
       });
 
       if (!response.ok) {
@@ -42,356 +39,176 @@ const Login = () => {
       }
 
       const data = await response.json();
-      console.log("API Response:", data);
+      console.log('API Response:', data);
 
-      // حفظ بيانات المستخدم 
-      const userData = {
-        name: data.user?.name || data.user?.username || data.name || data.username || formData.username,
-        email: data.user?.email || data.email,
-        username: data.user?.username || data.username || formData.username,
-        profilePicture: data.user?.profilePicture || data.profilePicture || null,
-        id: data.user?.id || data.id
-      };
+      const isActive = data.user?.isActive ?? data.isActive;
+      if (isActive === 0) {
+        setError('حسابك محظور حالياً. تواصل مع الإدارة لمزيد من المعلومات.');
+        setLoading(false);
+        setTimeout(() => navigate('/blocked'), 2000);
+        return;
+      }
 
-      console.log("Saved User Data:", userData);
+    const payload = JSON.parse(atob(data.accessToken.split('.')[1]));
+const userID = parseInt(payload["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"]);
 
-      login(userData, {
-        accessToken: data.accessToken,
-        refreshToken: data.refreshToken
-      });
+    const userData = {
+     name: data.user?.name || data.user?.username || data.name || data.username || formData.username,
+      email: data.user?.email || data.email,
+    username: data.user?.username || data.username || formData.username,
+  profilePicture: data.user?.profilePicture || data.profilePicture || null,
+  id: data.user?.id || data.id,
+  userID: userID
+};
+
+      console.log('Saved User Data:', userData);
+      login(userData, { accessToken: data.accessToken, refreshToken: data.refreshToken });
 
       setSuccess(true);
       setTimeout(() => {
-        navigate('/');
+        if (!window.location.pathname.startsWith('/admin')) navigate('/');
       }, 1500);
-      
     } catch (err) {
-      console.error("Login Error:", err);
+      console.error('Login Error:', err);
       setError(err.message || 'فشل تسجيل الدخول. حاول مرة أخرى.');
     } finally {
       setLoading(false);
     }
   };
 
+  // ══════════════════════════════════════════════════════════════════════════
+  // RENDER
+  // ══════════════════════════════════════════════════════════════════════════
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 flex items-center justify-center p-4 relative overflow-hidden" dir="rtl">
-      {/* Animated Background Pattern */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {/* Floating Blobs */}
-        <div className="absolute top-20 left-20 w-96 h-96 bg-emerald-500 rounded-full blur-3xl opacity-5 animate-blob"></div>
-        <div className="absolute bottom-20 right-20 w-96 h-96 bg-teal-500 rounded-full blur-3xl opacity-5 animate-blob animation-delay-2000"></div>
-        
-        {/* Subtle Rings in Center */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-          <div className="w-96 h-96 border border-emerald-200/20 rounded-full animate-ping-slow"></div>
-          <div className="absolute inset-0 w-96 h-96 border border-teal-200/15 rounded-full animate-ping-slow animation-delay-2000"></div>
-          <div className="absolute inset-0 w-96 h-96 border border-cyan-200/10 rounded-full animate-ping-slow animation-delay-4000"></div>
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-emerald-50 via-white to-teal-50 p-4" dir="rtl">
+
+      {/* ── Decorative background ─────────────────────────────────────── */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute -right-24 -top-24 size-80 rounded-full bg-emerald-400/10 blur-3xl" />
+        <div className="absolute -bottom-24 -left-24 size-80 rounded-full bg-teal-400/10 blur-3xl" />
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+          <div className="size-[500px] rounded-full border border-emerald-200/20 animate-ping" style={{ animationDuration: '6s' }} />
+          <div className="absolute inset-0 size-[500px] rounded-full border border-teal-200/15 animate-ping" style={{ animationDuration: '8s', animationDelay: '2s' }} />
         </div>
-        
-        {/* Subtle Grid Pattern */}
-        <div className="absolute inset-0 opacity-[0.02]" style={{
-          backgroundImage: `linear-gradient(to right, rgb(148 163 184) 1px, transparent 1px),
-                           linear-gradient(to bottom, rgb(148 163 184) 1px, transparent 1px)`,
-          backgroundSize: '60px 60px'
-        }}></div>
-        
-        {/* Floating Particles */}
-        <div className="absolute top-1/4 right-1/4 w-2 h-2 bg-emerald-400 rounded-full opacity-20 animate-float"></div>
-        <div className="absolute top-3/4 left-1/3 w-1.5 h-1.5 bg-teal-400 rounded-full opacity-15 animate-float animation-delay-1000"></div>
-        <div className="absolute top-1/3 right-1/2 w-2.5 h-2.5 bg-emerald-300 rounded-full opacity-10 animate-float animation-delay-2000"></div>
-        <div className="absolute bottom-1/4 left-1/4 w-1 h-1 bg-emerald-500 rounded-full opacity-25 animate-float animation-delay-3000"></div>
-        <div className="absolute top-2/3 right-1/3 w-2 h-2 bg-teal-500 rounded-full opacity-20 animate-float animation-delay-1500"></div>
-        
-        {/* Subtle Gradient Spots */}
-        <div className="absolute top-1/3 left-1/4 w-48 h-48 bg-gradient-to-br from-emerald-200/5 to-transparent rounded-full blur-3xl animate-pulse-slow"></div>
-        <div className="absolute bottom-1/3 right-1/4 w-40 h-40 bg-gradient-to-br from-teal-200/5 to-transparent rounded-full blur-3xl animate-pulse-slow animation-delay-2000"></div>
-        
-        {/* Gradient Orbs in Corners */}
-        <div className="absolute top-10 left-10 w-40 h-40 bg-gradient-to-br from-emerald-200/10 to-teal-200/10 rounded-full blur-2xl animate-pulse-slow"></div>
-        <div className="absolute bottom-10 right-10 w-32 h-32 bg-gradient-to-br from-teal-200/10 to-emerald-200/10 rounded-full blur-2xl animate-pulse-slow animation-delay-1000"></div>
       </div>
 
-      <div className="w-full max-w-md relative z-10">
-        {/* Logo & Header */}
-        <div className="text-center mb-6">
-          <div 
-            className="inline-flex items-center gap-4 cursor-pointer group mb-4"
-            onClick={() => navigate('/')}
-          >
-            <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 rounded-3xl blur-xl opacity-40 group-hover:opacity-70 transition-all duration-500"></div>
-              <div className="relative w-16 h-16 bg-gradient-to-br from-emerald-400 via-teal-500 to-cyan-500 rounded-3xl flex items-center justify-center transform group-hover:scale-110 group-hover:rotate-6 transition-all duration-500 shadow-2xl">
-                <div className="relative">
-                  <Handshake className="w-8 h-8 text-white" strokeWidth={2.5} />
-                  <Sparkles className="w-4 h-4 text-yellow-300 absolute -top-1 -right-1" />
-                </div>
-              </div>
-            </div>
-            <div className="flex flex-col text-right">
-              <h1 className="text-2xl font-black tracking-tight">
-                <span className="bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 bg-clip-text text-transparent">
-                  Participate
-                </span>
-                {' & '}
-                <span className="text-slate-700">Make</span>
-              </h1>
-              <p className="text-xs font-bold tracking-[0.2em] text-emerald-600">
-                A CHANGE
-              </p>
-            </div>
+      <div className="relative z-10 w-full max-w-md">
+
+        {/* ── Logo ─────────────────────────────────────────────────────── */}
+        <div className="mb-8 flex flex-col items-center gap-3 text-center">
+          <button onClick={() => navigate('/')} className="group flex items-center gap-3">
+            <span className="relative flex size-14 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-700 shadow-xl shadow-emerald-500/25 transition-transform group-hover:scale-105">
+              <HeartHandshake className="size-7 text-white" />
+              <span className="absolute -right-0.5 -top-0.5 size-3 rounded-full bg-amber-400 ring-2 ring-white" />
+            </span>
+            <span className="flex flex-col items-start leading-tight">
+              <span className="text-xl font-black text-slate-900">
+                <span className="text-emerald-600">شارك</span>
+              </span>
+              <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-amber-500">وأحدث فرقاً</span>
+            </span>
+          </button>
+          <div className="mt-2">
+            <h2 className="text-2xl font-black text-slate-900">مرحباً بعودتك 👋</h2>
+            <p className="mt-1 text-sm text-slate-500">سجّل دخولك للمتابعة</p>
           </div>
-          <h2 className="text-3xl font-black text-slate-800 mb-2">مرحباً بعودتك</h2>
-          <p className="text-slate-600">سجل دخولك للمتابعة</p>
         </div>
 
-        {/* Success Message */}
+        {/* ── Alerts ───────────────────────────────────────────────────── */}
         {success && (
-          <div className="mb-6 bg-gradient-to-r from-emerald-50 to-teal-50 border-2 border-emerald-500 rounded-2xl p-4 animate-fadeIn">
-            <div className="flex items-center gap-3 justify-center">
-              <div className="w-10 h-10 bg-emerald-500 rounded-full flex items-center justify-center">
-                <Check className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h3 className="text-lg font-bold text-emerald-800">🎉 تم تسجيل الدخول بنجاح!</h3>
-                <p className="text-sm text-emerald-700">جاري التوجيه...</p>
-              </div>
+          <div className="mb-5 flex items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4">
+            <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-emerald-600">
+              <Check className="size-5 text-white" />
+            </span>
+            <div>
+              <p className="font-bold text-emerald-800">🎉 تم تسجيل الدخول بنجاح!</p>
+              <p className="text-xs text-emerald-600">جاري التوجيه...</p>
             </div>
           </div>
         )}
-
-        {/* Error Message */}
         {error && (
-          <div className="mb-6 bg-rose-50 border-2 border-rose-500 rounded-2xl p-4 animate-fadeIn">
-            <div className="flex items-center gap-3 justify-center">
-              <AlertCircle className="w-5 h-5 text-rose-500" />
-              <p className="text-rose-700 font-semibold text-sm">{error}</p>
-            </div>
+          <div className="mb-5 flex items-center gap-3 rounded-2xl border border-red-200 bg-red-50 px-5 py-4">
+            <AlertCircle className="size-5 shrink-0 text-red-500" />
+            <p className="text-sm font-semibold text-red-700">{error}</p>
           </div>
         )}
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl p-8 border border-slate-200">
-          <div className="space-y-6">
+        {/* ── Form card ────────────────────────────────────────────────── */}
+        <div className="overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-xl shadow-slate-900/5">
+          <div className="bg-emerald-600 px-6 py-4">
+            <h3 className="font-black text-white">تسجيل الدخول</h3>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-5 p-6">
             {/* Username */}
             <div>
-              <label className="block text-slate-700 font-bold mb-2">
-                اسم المستخدم *
+              <label className="mb-1.5 block text-sm font-bold text-slate-700">
+                اسم المستخدم <span className="text-red-500">*</span>
               </label>
               <div className="relative">
-                <User className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                <input
-                  type="text"
-                  value={formData.username}
+                <User className="absolute right-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+                <input type="text" required disabled={loading}
+                  value={formData.username} placeholder="أدخل اسم المستخدم"
                   onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                  className="w-full pr-12 pl-4 py-3 border-2 border-slate-200 rounded-xl focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition-all outline-none"
-                  placeholder="أدخل اسم المستخدم"
-                  required
-                  disabled={loading}
-                />
+                  className={`${INPUT} pr-10`} />
               </div>
             </div>
 
             {/* Password */}
             <div>
-              <label className="block text-slate-700 font-bold mb-2">
-                كلمة المرور *
+              <label className="mb-1.5 block text-sm font-bold text-slate-700">
+                كلمة المرور <span className="text-red-500">*</span>
               </label>
               <div className="relative">
-                <Lock className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  value={formData.password}
+                <Lock className="absolute right-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+                <input type={showPassword ? 'text' : 'password'} required disabled={loading}
+                  value={formData.password} placeholder="أدخل كلمة المرور"
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  className="w-full pr-12 pl-12 py-3 border-2 border-slate-200 rounded-xl focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition-all outline-none"
-                  placeholder="أدخل كلمة المرور"
-                  required
-                  disabled={loading}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
-                >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  className={`${INPUT} pr-10 pl-11`} />
+                <button type="button" onClick={() => setShowPassword(!showPassword)}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-slate-600">
+                  {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                 </button>
               </div>
             </div>
 
-            {/* Forgot Password Link */}
-            <div className="text-left">
-              <Link to="/forgot-password" className="text-sm text-emerald-600 hover:text-emerald-700 font-semibold hover:underline transition-colors">
+            {/* Forgot password */}
+            <div className="flex justify-start">
+              <Link to="/forgot-password" className="text-xs font-semibold text-emerald-600 transition hover:text-emerald-700 hover:underline">
                 نسيت كلمة المرور؟
               </Link>
             </div>
 
-            {/* Submit Button */}
-            <button
-              type="submit"
-              disabled={loading || success}
-              className={`w-full py-4 rounded-xl font-bold text-lg transition-all transform hover:scale-105 shadow-lg flex items-center justify-center gap-3 ${
-                loading || success
-                  ? 'bg-slate-400 cursor-not-allowed'
-                  : 'bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 hover:from-emerald-600 hover:via-teal-600 hover:to-cyan-600 text-white'
-              }`}
-            >
+            {/* Submit */}
+            <button type="submit" disabled={loading || success}
+              className="flex w-full items-center justify-center gap-3 rounded-2xl bg-emerald-600 py-3.5 font-bold text-white transition hover:bg-emerald-700 hover:shadow-lg hover:shadow-emerald-600/20 disabled:cursor-not-allowed disabled:opacity-50">
               {loading ? (
-                <>
-                  <ButtonSkeleton />
-                  جاري تسجيل الدخول...
-                </>
+                <><ButtonSkeleton /> جاري تسجيل الدخول...</>
               ) : success ? (
-                <>
-                  <Check className="w-6 h-6" />
-                  تم التسجيل ✓
-                </>
+                <><Check className="size-5" /> تم التسجيل ✓</>
               ) : (
-                <>
-                  <LogIn className="w-6 h-6" />
-                  تسجيل الدخول
-                </>
+                <><LogIn className="size-5" /> تسجيل الدخول</>
               )}
             </button>
 
-            {/* Register Link */}
-            <div className="text-center pt-4 border-t border-slate-200">
-              <p className="text-slate-600">
-                ليس لديك حساب؟{' '}
-                <Link
-                  to="/register"
-                  className="text-emerald-600 hover:text-emerald-700 font-bold hover:underline transition-colors"
-                >
-                  إنشاء حساب جديد
-                </Link>
-              </p>
+            {/* Register link */}
+            <div className="border-t border-slate-100 pt-4 text-center text-sm text-slate-500">
+              ليس لديك حساب؟{' '}
+              <Link to="/register" className="font-bold text-emerald-600 transition hover:text-emerald-700 hover:underline">
+                إنشاء حساب جديد
+              </Link>
             </div>
 
-            {/* Back to Home */}
+            {/* Back home */}
             <div className="text-center">
-              <button
-                type="button"
-                onClick={() => navigate('/')}
-                className="text-slate-500 hover:text-slate-700 text-sm font-semibold transition-colors inline-flex items-center gap-2"
-              >
-                <span>←</span>
-                العودة للرئيسية
+              <button type="button" onClick={() => navigate('/')}
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-400 transition hover:text-slate-600">
+                <ArrowLeft className="size-3.5 rotate-180" /> العودة للرئيسية
               </button>
             </div>
-          </div>
-        </form>
+          </form>
+        </div>
       </div>
-
-      <style jsx>{`
-        @keyframes fadeIn {
-          from {
-            opacity: 0;
-            transform: translateY(-10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-
-        @keyframes blob {
-          0%, 100% {
-            transform: translate(0, 0) scale(1);
-          }
-          25% {
-            transform: translate(20px, -20px) scale(1.1);
-          }
-          50% {
-            transform: translate(-20px, 20px) scale(0.9);
-          }
-          75% {
-            transform: translate(20px, 20px) scale(1.05);
-          }
-        }
-
-        @keyframes float {
-          0%, 100% {
-            transform: translateY(0px) translateX(0px);
-            opacity: 0.2;
-          }
-          25% {
-            transform: translateY(-20px) translateX(10px);
-            opacity: 0.4;
-          }
-          50% {
-            transform: translateY(-40px) translateX(-10px);
-            opacity: 0.3;
-          }
-          75% {
-            transform: translateY(-20px) translateX(5px);
-            opacity: 0.5;
-          }
-        }
-
-        @keyframes pulse-slow {
-          0%, 100% {
-            opacity: 0.3;
-            transform: scale(1);
-          }
-          50% {
-            opacity: 0.6;
-            transform: scale(1.05);
-          }
-        }
-
-        @keyframes ping-slow {
-          0% {
-            transform: scale(1);
-            opacity: 0.8;
-          }
-          50% {
-            transform: scale(1.2);
-            opacity: 0.4;
-          }
-          100% {
-            transform: scale(1.4);
-            opacity: 0;
-          }
-        }
-
-        .animate-fadeIn {
-          animation: fadeIn 0.3s ease-out;
-        }
-
-        .animate-blob {
-          animation: blob 20s infinite ease-in-out;
-        }
-
-        .animate-float {
-          animation: float 15s infinite ease-in-out;
-        }
-
-        .animate-pulse-slow {
-          animation: pulse-slow 8s infinite ease-in-out;
-        }
-
-        .animate-ping-slow {
-          animation: ping-slow 6s infinite ease-out;
-        }
-
-        .animation-delay-1000 {
-          animation-delay: 1s;
-        }
-
-        .animation-delay-1500 {
-          animation-delay: 1.5s;
-        }
-
-        .animation-delay-2000 {
-          animation-delay: 2s;
-        }
-
-        .animation-delay-3000 {
-          animation-delay: 3s;
-        }
-
-        .animation-delay-4000 {
-          animation-delay: 4s;
-        }
-      `}</style>
     </div>
   );
 };

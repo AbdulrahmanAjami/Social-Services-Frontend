@@ -1,5 +1,4 @@
 import axios from 'axios';
-
 // إنشاء axios instance مع base URL (مع /api)
 const api = axios.create({
   baseURL: 'https://localhost:7244/api',
@@ -69,7 +68,11 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       localStorage.removeItem('accessToken');
       localStorage.removeItem('refreshToken');
-      window.location.href = '/login';
+      if (window.location.pathname.startsWith('/admin')) {
+        window.location.href = '/admin/login';
+      } else {
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }
@@ -128,7 +131,11 @@ apiBase.interceptors.response.use(
     if (error.response?.status === 401) {
       localStorage.removeItem('accessToken');
       localStorage.removeItem('refreshToken');
-      window.location.href = '/login';
+      if (window.location.pathname.startsWith('/admin')) {
+        window.location.href = '/admin/login';
+      } else {
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }
@@ -193,8 +200,8 @@ export const postsAPI = {
   getAllPosts: () => 
     api.get('/Posts/Get All Posts'),
   
-  createPost: (postData) => 
-    api.post('/Posts/Create Post', postData),
+createPost: (postData, config) => 
+  api.post('/Posts/Create Post', postData, config),
   
   deletePost: (postID) => 
     api.delete('/Posts/Delete Post', { params: { postID } }),
@@ -246,9 +253,11 @@ export const servicesAPI = {
   rejectService: (applicationID, message = null) => 
     api.post(`/Services/Reject Service?serviceApplicationID=${applicationID}&AcceptanceMessage=${encodeURIComponent(message || '')}`),
   
-  deleteServiceApplication: (applicationID) => 
-    api.delete('/Services/Delete Service Application', { params: { applicationID } }),
+ deleteServiceApplication: (serviceApplicationID) => 
+  api.delete('/Services/Delete Service Application', { params: { serviceApplicationID } }), // ✅ صح
 };
+
+
 
 // ============================================
 // 👤 USER ENDPOINTS

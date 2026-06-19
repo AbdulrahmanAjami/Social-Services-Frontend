@@ -1,7 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Trash2, Edit, Check, Lock, Unlock, AlertCircle, User, Handshake, Sparkles, Home } from 'lucide-react';
+import {
+  Plus, Trash2, Edit, Check, Lock, Unlock, AlertCircle,
+  User, Handshake, Sparkles, Home, Search, MapPin, Briefcase,
+  HeartHandshake, X, ChevronDown, Bell, UserCircle, LogOut,
+  CalendarDays, Users, Quote, Star, ArrowLeft,
+} from 'lucide-react';
 import axios from 'axios';
+import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+import markerIcon from 'leaflet/dist/images/marker-icon.png';
+import markerShadow from 'leaflet/dist/images/marker-shadow.png';
 import { useAuth } from './AuthContext';
 import { postsAPI, apiBase } from './api';
 import api from './api';
@@ -19,126 +29,165 @@ import {
   normalizePost,
 } from './postUtils';
 
-// ✅ قائمة أنواع الخدمات (المهن)
-const SERVICE_TYPES = [
-  "تعليم وتدريس",
-  "برمجة وتطوير",
-  "تصميم وجرافيك",
-  "تصوير ومونتاج",
-  "استشارات قانونية",
-  "استشارات طبية",
-  "صيانة وإصلاح",
-  "نقل وتوصيل",
-  "تنظيف",
-  "طبخ وطعام",
-  "رعاية أطفال",
-  "رعاية مسنين",
-  "تطوع عام",
-  "أخرى"
-];
+// Fix Leaflet default marker icons for Vite
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconUrl: markerIcon,
+  shadowUrl: markerShadow,
+});
 
-// professionID يتوافق مع ترتيب الأنواع في الـ backend (1 = أول عنصر)
-const PROFESSION_OPTIONS = SERVICE_TYPES.map((name, index) => ({
-  id: index + 1,
-  name,
-}));
+function LocationSelector({ location, onSelect }) {
+  useMapEvents({
+    click(e) {
+      onSelect({ lat: e.latlng.lat, lng: e.latlng.lng });
+    },
+  });
+  return location ? <Marker position={location} /> : null;
+}
+
+// ─── Constants ───────────────────────────────────────────────────────────────
 
 const VOLUNTARY_POST_TYPE_ID = 1;
 
+// ─── Reveal animation wrapper ────────────────────────────────────────────────
+function Reveal({ children, delay = 0, className = '' }) {
+  const [visible, setVisible] = useState(false);
+  const ref = React.useRef(null);
+  useEffect(() => {
+    const obs = new IntersectionObserver(
+      ([e]) => { if (e.isIntersecting) { setTimeout(() => setVisible(true), delay); obs.disconnect(); } },
+      { threshold: 0.1 }
+    );
+    if (ref.current) obs.observe(ref.current);
+    return () => obs.disconnect();
+  }, [delay]);
+  return (
+    <div
+      ref={ref}
+      className={className}
+      style={{
+        opacity: visible ? 1 : 0,
+        transform: visible ? 'translateY(0)' : 'translateY(20px)',
+        transition: `opacity 0.5s ease ${delay}ms, transform 0.5s ease ${delay}ms`,
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// MAIN COMPONENT
+// ═══════════════════════════════════════════════════════════════════════════════
 function Posts() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const isLoggedIn = !!user;
 
-  // ============================================
-  // 📊 STATE MANAGEMENT
-  // ============================================
-  const [posts, setPosts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [selectedCountyID, setSelectedCountyID] = useState('');
+  // ── State ──────────────────────────────────────────────────────────────────
+  const [posts, setPosts]                         = useState([]);
+  const [loading, setLoading]                     = useState(true);
+  const [error, setError]                         = useState(null);
+  const [searchTerm, setSearchTerm]               = useState('');
+  const [debouncedSearch, setDebouncedSearch]     = useState('');
+  const [selectedCountyID, setSelectedCountyID]   = useState('');
   const [selectedProfessionID, setSelectedProfessionID] = useState('');
-  const [activeTab, setActiveTab] = useState('all');
+  const [activeTab, setActiveTab]                 = useState('all');
 
-  // Modal states
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [editingPost, setEditingPost] = useState(null);
+  // Modals
+  const [showCreateModal, setShowCreateModal]     = useState(false);
+  const [showEditModal, setShowEditModal]         = useState(false);
+  const [editingPost, setEditingPost]             = useState(null);
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
-  const [deletingPostId, setDeletingPostId] = useState(null);
-  const [showServiceModal, setShowServiceModal] = useState(false);
-  const [selectedService, setSelectedService] = useState(null);
+  const [deletingPostId, setDeletingPostId]       = useState(null);
+  const [showServiceModal, setShowServiceModal]   = useState(false);
+  const [selectedService, setSelectedService]     = useState(null);
   const [showLoginRequired, setShowLoginRequired] = useState(false);
+  const [showLocationModal, setShowLocationModal] = useState(false);
+  const [selectedLocation, setSelectedLocation]   = useState(null);
 
-  // Apply modal states
-  const [showApplyModal, setShowApplyModal] = useState(false);
-  const [applyMessage, setApplyMessage] = useState('');
-  const [applyingToPost, setApplyingToPost] = useState(null);
-  const [appliedPosts, setAppliedPosts] = useState(new Set()); // ✅ تتبع المنشورات المتقدم عليها
+  // Apply
+  const [showApplyModal, setShowApplyModal]       = useState(false);
+  const [applyMessage, setApplyMessage]           = useState('');
+  const [applyingToPost, setApplyingToPost]       = useState(null);
+  const [appliedPosts, setAppliedPosts]           = useState(new Set());
 
-  // Form states
+  // AI
+  const [aiSearchInput, setAiSearchInput]         = useState('');
+  const [aiRecommendations, setAiRecommendations] = useState([]);
+  const [aiLoading, setAiLoading]                 = useState(false);
+  const [aiError, setAiError]                     = useState(null);
+
+  // Volunteer
+  const [isVolunteer, setIsVolunteer]             = useState(false);
+  const [volunteerLoading, setVolunteerLoading]   = useState(false);
+
+  // Custom dropdowns
+  const [professionDropdownOpen, setProfessionDropdownOpen] = useState(false);
+  const professionDropdownRef = React.useRef(null);
+
+  // Header user menu
+  const [userMenuOpen, setUserMenuOpen]           = useState(false);
+  const userRef = React.useRef(null);
+
+  // Form
   const [formData, setFormData] = useState({
-    PostTitle: '',
-    Description: '',
-    TypeID: 1,
-    CountyID: 3,
-    ProfessionID: 1,
-    imagePath: '',
-    Status: 1,
+    PostTitle: '', Description: '', TypeID: 1, CountyID: 3,
+    ProfessionID: 1, imagePath: '', Status: 1, Latitude: null, Longitude: null,
+    ServicesRequiredCount: 1,
   });
+  const defaultMapCenter = { lat: 31.9454, lng: 35.9284 };
 
-  // 🌍 Counties state
-  const [counties, setCounties] = useState([]);
-  const [loadingCounties, setLoadingCounties] = useState(false);
-
-  // 🌍 Cities state
-  const [cities, setCities] = useState([]);
-  const [loadingCities, setLoadingCities] = useState(false);
-
-  // 🏙️ Selected city for form (for cascading dropdowns)
+  // Cities / Counties
+  const [counties, setCounties]                   = useState([]);
+  const [loadingCounties, setLoadingCounties]     = useState(false);
+  const [cities, setCities]                       = useState([]);
+  const [professions, setProfessions] = useState([]);
+  const [loadingCities, setLoadingCities]         = useState(false);
   const [selectedCityForForm, setSelectedCityForForm] = useState(null);
+  const [filteredCounties, setFilteredCounties]   = useState([]);
+  const [imageUploading, setImageUploading]       = useState(false);
+  const [scrolled, setScrolled]                   = useState(false);
 
-  // 🌍 Filtered counties based on selected city
-  const [filteredCounties, setFilteredCounties] = useState([]);
-  const [imageUploading, setImageUploading] = useState(false);
-
-  const handleImageFileChange = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    try {
-      setImageUploading(true);
-      const dataUrl = await fileToCompressedDataUrl(file);
-      setFormData((prev) => ({ ...prev, imagePath: dataUrl }));
-    } catch (err) {
-      alert(err.message || 'تعذّر تحميل الصورة');
-    } finally {
-      setImageUploading(false);
-      e.target.value = '';
-    }
-  };
-
-  // ============================================
-  // 🎣 FETCH CITIES & COUNTIES ON MOUNT
-  // ============================================
-  useEffect(() => {
-    fetchCities();
-    fetchCounties();
-  }, []);
-
-  // تأخير بسيط للبحث لتقليل طلبات الـ API
-  useEffect(() => {
-    const timer = setTimeout(() => setDebouncedSearch(searchTerm), 400);
-    return () => clearTimeout(timer);
+  // ── Effects ────────────────────────────────────────────────────────────────
+// 🔄 عدل هذا السطر ليصبح هكذا:
+useEffect(() => { fetchCities(); fetchCounties(); fetchProfessions(); }, []);  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(searchTerm), 500);
+    return () => clearTimeout(t);
   }, [searchTerm]);
-
-  // جلب المنشورات عند تغيّر أي فلتر
+  useEffect(() => { fetchFilteredPosts(); }, [debouncedSearch, selectedCountyID, selectedProfessionID, activeTab]);
+  
+  // Check volunteer status on page load
   useEffect(() => {
-    fetchFilteredPosts();
-  }, [debouncedSearch, selectedCountyID, selectedProfessionID, activeTab]);
+    const checkVolunteerStatus = async () => {
+      if (!isLoggedIn || !user?.userID) return;
 
-  // إزالة منشور مكتمل من القائمة العامة عند الإكمال من Profile أو من هذه الصفحة
+      setVolunteerLoading(true);
+      try {
+        const response = await api.get('/Volunteer/Get Volunteer by userID', {
+          params: { userID: user?.userID }
+        });
+        setIsVolunteer(true);
+      } catch (error) {
+        // If 404 or error, user is not a volunteer
+        setIsVolunteer(false);
+      } finally {
+        setVolunteerLoading(false);
+      }
+    };
+    checkVolunteerStatus();
+  }, [isLoggedIn , user]);
+
+  // Close profession dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (professionDropdownRef.current && !professionDropdownRef.current.contains(e.target)) {
+        setProfessionDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
   useEffect(() => {
     const onPostCompleted = ({ detail }) => {
       const postID = detail?.postID;
@@ -148,248 +197,186 @@ function Posts() {
     window.addEventListener(POST_COMPLETED_EVENT, onPostCompleted);
     return () => window.removeEventListener(POST_COMPLETED_EVENT, onPostCompleted);
   }, []);
-
-  // ============================================
-  // 🌍 FETCH COUNTIES FROM API
-  // ============================================
-  const fetchCounties = async () => {
-    try {
-      console.log('🌍 جاري جلب المناطق من الـ API...');
-      setLoadingCounties(true);
-      const response = await apiBase.get('/CitiesCounties/Get All Counties');
-      console.log('✅ تم جلب المناطق بنجاح:', response.data);
-      setCounties(Array.isArray(response.data) ? response.data : []);
-    } catch (err) {
-      console.error('❌ خطأ في جلب المناطق:', err);
-      setCounties([]);
-    } finally {
-      setLoadingCounties(false);
-    }
-  };
-
-  // ============================================
-  // 🏙️ FETCH CITIES FROM API
-  // ============================================
-  const fetchCities = async () => {
-    try {
-      console.log('🏙️ جاري جلب المدن من الـ API...');
-      setLoadingCities(true);
-      const response = await apiBase.get('/CitiesCounties/Get All Cities');
-      console.log('✅ تم جلب المدن بنجاح:', response.data);
-      setCities(Array.isArray(response.data) ? response.data : []);
-    } catch (err) {
-      console.error('❌ خطأ في جلب المدن:', err);
-      setCities([]);
-    } finally {
-      setLoadingCities(false);
-    }
-  };
-
-  // ============================================
-  // 🌍 UPDATE FILTERED COUNTIES WHEN CITY CHANGES
-  // ============================================
   useEffect(() => {
     if (selectedCityForForm && counties.length > 0) {
-      // فلترة المناطق بناءً على المدينة المختارة
-      const filtered = counties.filter(county => county.cityID === selectedCityForForm);
-      console.log('🔍 تم فلترة المناطق:', {
-        selectedCityID: selectedCityForForm,
-        countyCount: counties.length,
-        filteredCount: filtered.length,
-        filtered: filtered
-      });
+      const filtered = counties.filter(c => c.cityID === selectedCityForForm);
       setFilteredCounties(filtered);
-      
-      // تعيين أول منطقة كـ default
-      if (filtered.length > 0) {
-        setFormData(prev => ({ ...prev, CountyID: filtered[0].countyID }));
-      }
+      if (filtered.length > 0) setFormData(p => ({ ...p, CountyID: filtered[0].countyID }));
     } else {
       setFilteredCounties([]);
     }
   }, [selectedCityForForm, counties]);
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 50);
+    window.addEventListener('scroll', onScroll);
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+  useEffect(() => {
+    const onClick = (e) => {
+      if (userMenuOpen && userRef.current && !userRef.current.contains(e.target))
+        setUserMenuOpen(false);
+    };
+    document.addEventListener('mousedown', onClick);
+    return () => document.removeEventListener('mousedown', onClick);
+  }, [userMenuOpen]);
 
-  // ============================================
-  // 📡 API CALLS
-  // ============================================
+  // ── Image ──────────────────────────────────────────────────────────────────
+
+const handleImageFileChange = async (e) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+  try {
+    setImageUploading(true);
+    setFormData((prev) => ({ ...prev, imageFile: file })); // احفظ الـ file مباشرة
+  } catch (err) {
+    alert(err.message || 'تعذّر تحميل الصورة');
+  } finally {
+    setImageUploading(false);
+    e.target.value = '';
+  }
+};
+
+
+
+
+  const handleLocationSelect = (location) => {
+    setSelectedLocation(location);
+    setFormData((prev) => ({ ...prev, Latitude: location.lat, Longitude: location.lng }));
+  };
+
+  const openLocationModal = () => {
+    const cur = formData.Latitude && formData.Longitude
+      ? { lat: formData.Latitude, lng: formData.Longitude } : null;
+    setSelectedLocation(cur);
+    setShowLocationModal(true);
+  };
+
+  // ── API calls (identical to original) ────────────────────────────────────
+  const fetchCounties = async () => {
+    try {
+      setLoadingCounties(true);
+      const response = await apiBase.get('/CitiesCounties/Get All Counties');
+      setCounties(Array.isArray(response.data) ? response.data : []);
+    } catch (err) { setCounties([]); }
+    finally { setLoadingCounties(false); }
+  };
+
+  const fetchCities = async () => {
+    try {
+      setLoadingCities(true);
+      const response = await apiBase.get('/CitiesCounties/Get All Cities');
+      setCities(Array.isArray(response.data) ? response.data : []);
+    } catch (err) { setCities([]); }
+    finally { setLoadingCities(false); }
+  };
+
+
+
+  
+
+const fetchProfessions = async () => {
+  try {
+    // 🌟 استخدمنا api (وليس apiBase) لأن الـ baseURL تبعه فيه /api تلقائياً
+    const response = await api.get('/Profession/GetAllProfessions');
+    console.log('Professions:', response.data);
+    if (response.data && Array.isArray(response.data)) {
+      setProfessions(response.data);
+    } else {
+      setProfessions([]);
+    }
+  } catch (err) {
+    console.error("فشل في جلب المهن:", err);
+    setProfessions([]);
+  }
+};
 
   const buildFilterParams = () => {
     const params = {};
-    if (debouncedSearch.trim()) {
-      params.searchQuery = debouncedSearch.trim();
-    }
-    if (selectedCountyID) {
-      params.countyID = Number(selectedCountyID);
-    }
-    if (selectedProfessionID) {
-      params.professionID = Number(selectedProfessionID);
-    }
-    if (activeTab === 'voluntary') {
-      params.postTypeID = VOLUNTARY_POST_TYPE_ID;
-    }
+    if (debouncedSearch.trim()) params.searchQuery = debouncedSearch.trim();
+    if (selectedCountyID) params.countyID = Number(selectedCountyID);
+    if (selectedProfessionID) params.professionID = Number(selectedProfessionID);
+    if (activeTab === 'voluntary') params.postTypeID = VOLUNTARY_POST_TYPE_ID;
     return params;
   };
 
   const fetchFilteredPosts = async () => {
     try {
       const params = buildFilterParams();
-      console.log('📡 جاري جلب المنشورات المفلترة:', params);
-      setLoading(true);
-      setError(null);
+      setLoading(true); setError(null);
       const response = await postsAPI.getFilteredPosts(params);
-      console.log('✅ تم جلب المنشورات بنجاح:', response.data);
       const data = Array.isArray(response.data) ? response.data : [];
       setPosts(
-        data
-          .filter(
-            (post) => post.postTypeName !== 'مدفوع' && !isPostComplete(post)
-          )
-          .map(normalizePost)
+        data.filter(p => p.postTypeName !== 'مدفوع' && !isPostComplete(p)).map(normalizePost)
       );
     } catch (err) {
-      console.error('❌ خطأ في جلب المنشورات:', err);
-      setError(
-        err.response?.data?.message ||
-        'حدث خطأ في تحميل المنشورات. يرجى المحاولة لاحقاً.'
-      );
-    } finally {
-      setLoading(false);
-    }
+      setError(err.response?.data?.message || 'حدث خطأ في تحميل المنشورات. يرجى المحاولة لاحقاً.');
+    } finally { setLoading(false); }
   };
+  console.log('First post imagePath:', posts[0]?.imagePath);
 
-  const handleCreatePost = async (e) => {
-    e.preventDefault();
-    if (!isLoggedIn) {
-      alert('يجب تسجيل الدخول أولاً');
-      navigate('/login');
-      return;
-    }
+const handleCreatePost = async (e) => {
+  e.preventDefault();
+  
+  if (!isLoggedIn) { alert('يجب تسجيل الدخول أولاً'); navigate('/login'); return; }
+  try {
+    setLoading(true);
+    
+    const formDataToSend = new FormData();
+    formDataToSend.append('Data.PostTitle', formData.PostTitle);
+    formDataToSend.append('Data.Description', formData.Description);
+    formDataToSend.append('Data.TypeID', formData.TypeID);
+    formDataToSend.append('Data.CountyID', formData.CountyID);
+    formDataToSend.append('Data.ProfessionID', formData.ProfessionID);
+    formDataToSend.append('Data.Status', formData.Status);
+    formDataToSend.append('Data.PublishDate', new Date().toISOString());
+    if (formData.Latitude) formDataToSend.append('Data.Latitude', formData.Latitude);
+    if (formData.Longitude) formDataToSend.append('Data.Longitude', formData.Longitude);
+    formDataToSend.append('Data.ServicesRequiredCount', formData.ServicesRequiredCount);
+    if (formData.imageFile) formDataToSend.append('Image', formData.imageFile);
 
-    try {
-      console.log('📝 جاري إنشاء منشور جديد...');
-      console.log('� ========== formData BEFORE REQUEST ==========');
-      console.log('PostTitle:', formData.PostTitle);
-      console.log('Description:', formData.Description);
-      console.log('TypeID:', formData.TypeID, '(Type:', typeof formData.TypeID, ')');
-      console.log('CountyID:', formData.CountyID, '(Type:', typeof formData.CountyID, ')');
-      console.log('ProfessionID:', formData.ProfessionID, '(Type:', typeof formData.ProfessionID, ')');
-      console.log('imagePath:', formData.imagePath);
-      console.log('Status:', formData.Status);
-      console.log('Full formData Object:', formData);
-      console.log('📋 =============================================');
-      
-      // ✅ تحويل البيانات من PascalCase إلى camelCase
-      const requestPayload = {
-        postTitle: formData.PostTitle,
-        description: formData.Description,
-        typeID: formData.TypeID,
-        countyID: formData.CountyID,
-        professionID: formData.ProfessionID,
-        imagePath: formData.imagePath?.trim() || '',
-        ImagePath: formData.imagePath?.trim() || '',
-        status: formData.Status,
-        publishDate: new Date().toISOString(),
-      };
-      
-      console.log('🚀 ========== REQUEST PAYLOAD ==========');
-      console.log('postTitle:', requestPayload.postTitle);
-      console.log('description:', requestPayload.description);
-      console.log('typeID:', requestPayload.typeID);
-      console.log('countyID:', requestPayload.countyID, '⭐ هذه القيمة المُرسلة');
-      console.log('professionID:', requestPayload.professionID);
-      console.log('imagePath:', requestPayload.imagePath);
-      console.log('status:', requestPayload.status);
-      console.log('publishDate:', requestPayload.publishDate, '📅 التاريخ الحالي');
-      console.log('Full Request:', JSON.stringify(requestPayload, null, 2));
-      console.log('🚀 ====================================');
-      
-      setLoading(true);
-      const response = await postsAPI.createPost(requestPayload);
-      console.log('✅ تم إنشاء المنشور بنجاح:', response.data);
-      
-      // ✅ جلب جميع المنشورات من الـ API بعد الإنشاء
-      console.log('🔄 جاري جلب قائمة المنشورات المحدثة...');
-      setSearchTerm('');
-      setSelectedCountyID('');
-      setSelectedProfessionID('');
-      setActiveTab('all');
-      await fetchFilteredPosts();
-      
-      alert('✅ تم إنشاء المنشور بنجاح');
-      setFormData({
-        PostTitle: '',
-        Description: '',
-        TypeID: 1,
-        CountyID: 3,
-        ProfessionID: 1,
-        imagePath: '',
-        Status: 1,
-      });
-      setSelectedCityForForm(null);
-      setShowCreateModal(false);
-    } catch (err) {
-      console.error('❌ خطأ في إنشاء المنشور:', err);
-      console.error('📋 Error Response:', err.response?.data);
-      alert('❌ فشل في إنشاء المنشور: ' + (err.response?.data?.message || err.message));
-    } finally {
-      console.log('✅ انتهت عملية الإنشاء');
-      setLoading(false);
-    }
-  };
+const result = await postsAPI.createPost(formDataToSend, {
+  headers: { 'Content-Type': 'multipart/form-data' }
+});
+await fetchFilteredPosts();
+
+    setSearchTerm(''); setSelectedCountyID(''); setSelectedProfessionID(''); setActiveTab('all');
+    await fetchFilteredPosts();
+    alert('✅ تم إنشاء المنشور بنجاح');
+    setFormData({ PostTitle:'',Description:'',TypeID:1,CountyID:3,ProfessionID:1,imagePath:'',Status:1,Latitude:null,Longitude:null, ServicesRequiredCount: 1 });
+    setSelectedCityForForm(null); setSelectedLocation(null); setShowCreateModal(false);
+  } catch (err) {
+    console.log('Validation errors:', err.response?.data?.errors);
+    alert('❌ فشل في إنشاء المنشور: ' + (err.response?.data?.message || err.message));
+  } finally { setLoading(false); }
+};
 
   const handleUpdatePost = async (e) => {
     e.preventDefault();
     if (!editingPost) return;
-
     try {
       setLoading(true);
       await postsAPI.updatePost(editingPost.postID, formData);
       alert('✅ تم تحديث المنشور بنجاح');
-      setShowEditModal(false);
-      setEditingPost(null);
-      setFormData({
-        PostTitle: '',
-        Description: '',
-        TypeID: 1,
-        CountyID: 3,
-        ProfessionID: 1,
-        imagePath: '',
-        Status: 1,
-      });
-      setSelectedCityForForm(null);
+      setShowEditModal(false); setEditingPost(null);
+      setFormData({ PostTitle:'',Description:'',TypeID:1,CountyID:3,ProfessionID:1,imagePath:'',Status:1,Latitude:null,Longitude:null });
+      setSelectedCityForForm(null); setSelectedLocation(null);
       await fetchFilteredPosts();
     } catch (err) {
-      console.error('Error updating post:', err);
       alert('❌ فشل في تحديث المنشور: ' + (err.response?.data?.message || err.message));
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   };
 
   const handleDeletePost = async () => {
     if (!deletingPostId) return;
-
     try {
       setLoading(true);
       await postsAPI.deletePost(deletingPostId);
-      
-      // حذف فوري من الـ state بدون إعادة تحميل
-      setPosts(posts.filter(post => post.postID !== deletingPostId));
-      
-      setShowConfirmDelete(false);
-      setDeletingPostId(null);
-      
+      setPosts(posts.filter(p => p.postID !== deletingPostId));
+      setShowConfirmDelete(false); setDeletingPostId(null);
       alert('✅ تم حذف المنشور بنجاح');
     } catch (err) {
-      console.error('Error deleting post:', err);
-      const errorMessage = err.response?.data?.message || 
-                          err.response?.data || 
-                          err.message || 
-                          'فشل في حذف المنشور';
-      alert('❌ ' + errorMessage);
-    } finally {
-      setLoading(false);
-    }
+      alert('❌ ' + (err.response?.data?.message || err.response?.data || err.message || 'فشل في حذف المنشور'));
+    } finally { setLoading(false); }
   };
 
   const handleCompletePost = async (postID) => {
@@ -399,12 +386,8 @@ function Posts() {
       setPosts((prev) => prev.filter((p) => p.postID !== postID));
       dispatchPostCompleted(postID);
       alert('✅ تم إكمال المنشور');
-    } catch (err) {
-      console.error('Error completing post:', err);
-      alert('❌ ' + (err.response?.data?.message || err.message));
-    } finally {
-      setLoading(false);
-    }
+    } catch (err) { alert('❌ ' + (err.response?.data?.message || err.message)); }
+    finally { setLoading(false); }
   };
 
   const handleLockPost = async (postID) => {
@@ -413,12 +396,8 @@ function Posts() {
       await postsAPI.lockPost(postID);
       alert('✅ تم قفل المنشور');
       await fetchFilteredPosts();
-    } catch (err) {
-      console.error('Error locking post:', err);
-      alert('❌ ' + (err.response?.data?.message || err.message));
-    } finally {
-      setLoading(false);
-    }
+    } catch (err) { alert('❌ ' + (err.response?.data?.message || err.message)); }
+    finally { setLoading(false); }
   };
 
   const handleUnlockPost = async (postID) => {
@@ -427,499 +406,659 @@ function Posts() {
       await postsAPI.unlockPost(postID);
       alert('✅ تم فتح المنشور');
       await fetchFilteredPosts();
-    } catch (err) {
-      console.error('Error unlocking post:', err);
-      alert('❌ ' + (err.response?.data?.message || err.message));
-    } finally {
-      setLoading(false);
-    }
+    } catch (err) { alert('❌ ' + (err.response?.data?.message || err.message)); }
+    finally { setLoading(false); }
   };
 
-  // ✅ دالة التقديم على خدمة
   const handleApplyToService = async () => {
-    if (!isLoggedIn) {
-      setShowLoginRequired(true);
-      return;
-    }
-
+    if (!isLoggedIn) { setShowLoginRequired(true); return; }
+    if (!isVolunteer) { navigate('/volunteer-register'); return; }
     if (!applyingToPost) return;
-
     setLoading(true);
-
     try {
-      console.log('📝 جاري إرسال طلب التقديم على الخدمة...');
-      
-      const applicationData = {
-        postID: applyingToPost.postID,
-        description: applyMessage.trim() || null
-      };
-
-      console.log('📤 بيانات الطلب:', applicationData);
-      const response = await api.post('/Services/Create Service Application', applicationData);
-      
-      console.log('✅ تم التقديم بنجاح:', response.data);
-      
-      // ✅ إضافة المنشور للـ set الخاص بـ appliedPosts
+      const applicationData = { postID: applyingToPost.postID, description: applyMessage.trim() || null };
+      await api.post('/Services/Create Service Application', applicationData);
       setAppliedPosts(prev => new Set([...prev, applyingToPost.postID]));
-      
-      setShowApplyModal(false);
-      setApplyMessage('');
-      setApplyingToPost(null);
-      
+      setShowApplyModal(false); setApplyMessage(''); setApplyingToPost(null);
       alert('✅ تم التقدم بنجاح!');
     } catch (error) {
-      console.error('❌ خطأ في التقديم على الخدمة:', error);
-      const errorMessage = error.response?.data?.message || 
-                          error.response?.data || 
-                          error.message || 
-                          'فشل في التقديم على الخدمة';
-      alert('❌ ' + errorMessage);
-    } finally {
-      setLoading(false);
+      alert('❌ ' + (error.response?.data?.message || error.response?.data || error.message || 'فشل في التقديم على الخدمة'));
+    } finally { setLoading(false); }
+  };
+
+  const handleAiSearch = async (e) => {
+    e.preventDefault();
+    if (!aiSearchInput.trim()) return;
+    setAiLoading(true); setAiError(null); setAiRecommendations([]);
+    try {
+      const response = await api.get('/AI/GetRecommendations', { params: { userMessage: aiSearchInput.trim() } });
+      const rawData = response.data;
+      const cleanJson = typeof rawData === 'string' 
+        ? rawData.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim()
+        : JSON.stringify(rawData);
+      const parsed = JSON.parse(cleanJson);
+const postIds = parsed?.postIds || [];
+const recommended = posts.filter(post => postIds.includes(Number(post.postID)));
+
+for (const id of postIds) {
+  try {
+    const res = await api.get('/Posts/GetPostByID', { params: { postID: id } });
+    if (res.data) recommended.push(normalizePost(res.data));
+  } catch (err) {
+    console.error(`Failed to fetch post ${id}:`, err);
+  }
+}
+
+setAiRecommendations(recommended);
+    } catch (error) {
+      setAiError(error.response?.data?.message || error.response?.data || error.message || 'فشل في جلب التوصيات');
+    } finally { setAiLoading(false); }
+  };
+
+const handleCardClick = async (service) => {
+
+  console.log('professions list:', professions);
+  console.log('service professionName:', service.professionName);
+const profession = professions.find(p => p.professionTitle === service.professionName);
+  console.log('found profession:', profession);
+
+  console.log('professions list:', professions);
+  if (profession) {
+    try {
+      await api.post(`/Posts/Log View?professionId=${profession.professionID}`);
+    } catch (err) {
+      console.error('Failed to log view:', err);
     }
-  };
+  }
+  setSelectedService(service);
+  setShowServiceModal(true);
+};
 
-  const handleCardClick = (service) => {
-    setSelectedService(service);
-    setShowServiceModal(true);
-  };
-
-  // ============================================
-  // 🎯 HANDLERS
-  // ============================================
+const handleLogout = () => { logout(); setUserMenuOpen(false); navigate('/'); };
 
   const openEditModal = (post) => {
     setEditingPost(post);
-    setFormData({
-      PostTitle: post.postTitle || '',
-      Description: post.description || '',
-      TypeID: post.typeID || 1,
-      CountyID: post.countyID || 1,
-      ProfessionID: post.professionID || 1,
-      imagePath: getRawImagePath(post) || '',
+    const initialData = {
+      PostTitle: post.postTitle || '', Description: post.description || '',
+      TypeID: post.typeID || 1, CountyID: post.countyID || 1,
+      ProfessionID: post.professionID || 1, imagePath: getRawImagePath(post) || '',
       Status: post.status || 1,
-    });
-    // تعيين المدينة المختارة بناءً على المنطقة
+      Latitude: post.latitude ?? post.Latitude ?? null,
+      Longitude: post.longitude ?? post.Longitude ?? null,
+    };
+    setFormData(initialData);
+    setSelectedLocation(
+      initialData.Latitude != null && initialData.Longitude != null
+        ? { lat: initialData.Latitude, lng: initialData.Longitude } : null
+    );
     const county = counties.find(c => c.countyID === post.countyID);
-    if (county) {
-      setSelectedCityForForm(county.cityID);
-    }
+    if (county) setSelectedCityForForm(county.cityID);
     setShowEditModal(true);
   };
 
-  // ============================================
-  // 🎨 UI RENDER
-  // ============================================
+  const resetForm = () => {
+    setShowCreateModal(false); setShowEditModal(false);
+    setEditingPost(null); setSelectedCityForForm(null); setSelectedLocation(null);
+  };
 
+  // ── shared card props ─────────────────────────────────────────────────────
+  const cardProps = (post) => ({
+    post,
+    onEdit: openEditModal,
+    onDelete: (id) => { setDeletingPostId(id); setShowConfirmDelete(true); },
+    onCardClick: handleCardClick,
+    isOwner: isLoggedIn && post.authorName === user?.username,
+    isLoggedIn,
+    currentUser: user,
+    onApplyClick: (p) => {
+      setApplyingToPost({ postID: p.postID, postTitle: p.postTitle, postTypeName: p.postTypeName });
+      setShowApplyModal(true);
+    },
+    appliedPosts,
+  });
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // RENDER
+  // ══════════════════════════════════════════════════════════════════════════
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white" dir="rtl">
-      {/* HEADER */}
-      <header className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white shadow-2xl sticky top-0 z-40">
-        <div className="container mx-auto px-6 py-5">
-          <div className="flex justify-between items-center">
-            {/* Logo Section */}
-            <div 
-              className="flex items-center gap-4 cursor-pointer group"
-              onClick={() => navigate('/')}
-            >
-              <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 rounded-3xl blur-xl opacity-40 group-hover:opacity-70 transition-all duration-500"></div>
-                <div className="relative w-14 h-14 bg-gradient-to-br from-emerald-400 via-teal-500 to-cyan-500 rounded-3xl flex items-center justify-center transform group-hover:scale-110 group-hover:rotate-6 transition-all duration-500 shadow-2xl">
-                  <div className="relative">
-                    <Handshake className="w-7 h-7 text-white" strokeWidth={2.5} />
-                    <Sparkles className="w-4 h-4 text-yellow-300 absolute -top-1 -right-1" />
-                  </div>
-                </div>
-              </div>
-              <div className="flex flex-col">
-                <h1 className="text-xl md:text-2xl font-black tracking-tight text-white">
-                  <span className="bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 bg-clip-text text-transparent">
-                    Participate
-                  </span>
-                  {' & '}
-                  <span className="text-slate-200">Make</span>
-                </h1>
-                <p className="text-xs font-bold tracking-[0.2em] text-emerald-400">
-                  A CHANGE
-                </p>
-              </div>
-            </div>
+    <div className="min-h-screen bg-white" dir="rtl">
 
-            {/* Action Buttons */}
-            <div className="flex gap-3 items-center">
-              <button 
-                onClick={() => navigate('/')}
-                className="bg-slate-700 hover:bg-slate-600 text-white px-6 py-2.5 rounded-xl font-bold transition-all flex items-center gap-2 shadow-lg"
+      {/* ━━━━ HEADER ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+      <header className={`sticky top-0 z-50 border-b border-slate-200/60 transition-all duration-300 ${
+        scrolled ? 'bg-white/95 backdrop-blur-md shadow-sm' : 'bg-white/80 backdrop-blur-md'
+      }`}>
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-5 py-3 md:px-8">
+
+          {/* RIGHT: Logo + CTA ───────────────────────────────────────────── */}
+          <div className="flex items-center gap-3">
+            <button onClick={() => navigate('/')} className="flex items-center gap-3 group">
+              <span className="relative flex size-11 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-700 shadow-lg shadow-emerald-500/25 transition-transform group-hover:scale-105">
+                <HeartHandshake className="size-6 text-white" />
+                <span className="absolute -right-0.5 -top-0.5 size-2.5 rounded-full bg-amber-400 ring-2 ring-white" />
+              </span>
+              <span className="hidden flex-col leading-tight sm:flex">
+                <span className="text-base font-black tracking-tight text-slate-900">
+                  <span className="text-emerald-600">شارك</span>
+                </span>
+                <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-amber-500">وأحدث فرقاً</span>
+              </span>
+            </button>
+            {isLoggedIn && (
+              <button
+                onClick={() => {
+                  setFormData({ PostTitle:'',Description:'',TypeID:1,CountyID:3,ProfessionID:1,imagePath:'',Status:1,Latitude:null,Longitude:null });
+                  setShowCreateModal(true);
+                }}
+                className="hidden items-center gap-2 rounded-full bg-amber-500 px-5 py-2 text-sm font-bold text-white transition-colors hover:bg-amber-600 sm:inline-flex"
               >
-                <Home className="w-5 h-5" />
-                <span className="hidden md:inline">الرئيسية</span>
+                <Plus className="size-4" /> إضافة منشور
               </button>
-              
-              {isLoggedIn && (
+            )}
+          </div>
+
+          {/* CENTER: Nav links ───────────────────────────────────────────── */}
+          <nav className="hidden items-center gap-1 lg:flex">
+            <button
+              onClick={() => navigate('/')}
+              className="flex items-center gap-1 rounded-full px-4 py-2 text-sm font-medium text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900"
+            >
+              <Home className="size-4" /> الرئيسية
+            </button>
+            <button
+              className="flex items-center gap-1 rounded-full bg-slate-100 px-4 py-2 text-sm font-medium text-slate-900"
+            >
+              <Briefcase className="size-4" /> الخدمات التطوعية
+            </button>
+          </nav>
+
+          {/* LEFT: User / Auth / Bell ────────────────────────────────────── */}
+          <div className="relative flex items-center gap-2" ref={userRef}>
+            {isLoggedIn ? (
+              <>
                 <button
-                  onClick={() => {
-                    setFormData({
-                      PostTitle: '',
-                      Description: '',
-                      TypeID: 1,
-                      CountyID: 3,
-                      ProfessionID: 1,
-                      imagePath: '',
-                      Status: 1,
-                    });
-                    setShowCreateModal(true);
-                  }}
-                  className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white px-6 py-2.5 rounded-xl font-bold transition-all flex items-center gap-2 shadow-lg transform hover:scale-105"
+                  onClick={() => setUserMenuOpen(o => !o)}
+                  className="flex items-center gap-1.5 rounded-full p-0.5 transition-transform hover:scale-105"
                 >
-                  <span className="text-xl">+</span>
-                  إضافة منشور
+                  <img
+                    src={user?.photoURL || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&q=80'}
+                    alt="Profile"
+                    className="size-10 rounded-full object-cover ring-2 ring-emerald-400/50"
+                  />
+                  <ChevronDown className={`size-4 text-slate-500 transition-transform ${userMenuOpen ? 'rotate-180' : ''}`} />
                 </button>
-              )}
-              
-              {isLoggedIn ? (
-                <button
-                  onClick={() => navigate('/profile')}
-                  className="w-11 h-11 bg-gradient-to-br from-emerald-400 to-teal-500 hover:from-emerald-500 hover:to-teal-600 rounded-full flex items-center justify-center transition-all transform hover:scale-110 shadow-lg"
-                  title="الملف الشخصي"
-                >
-                  <User className="w-6 h-6 text-white" />
+                <button className="relative hidden size-10 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-100 sm:flex">
+                  <Bell className="size-5" />
+                  <span className="absolute right-2 top-2 size-2 rounded-full bg-amber-500" />
                 </button>
-              ) : (
-                <button 
-                  onClick={() => navigate('/login')}
-                  className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white px-6 py-2.5 rounded-xl font-bold transition-all shadow-lg transform hover:scale-105"
-                >
-                  تسجيل الدخول
-                </button>
-              )}
-            </div>
+                {userMenuOpen && (
+                  <div className="absolute left-0 top-14 w-56 overflow-hidden rounded-2xl border border-slate-200 bg-white p-2 shadow-xl z-50">
+                    <div className="flex items-center gap-3 rounded-xl px-3 py-2.5">
+                      <img
+                        src={user?.photoURL || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&q=80'}
+                        alt="Profile" className="size-10 rounded-full object-cover"
+                      />
+                      <div className="flex flex-col leading-tight">
+                        <span className="text-sm font-bold text-slate-800">{user?.displayName || 'مستخدم'}</span>
+                        <span className="text-xs text-slate-500">{user?.email}</span>
+                      </div>
+                    </div>
+                    <div className="my-1 h-px bg-slate-200" />
+                    <button
+                      onClick={() => { navigate('/Profile'); setUserMenuOpen(false); }}
+                      className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors hover:bg-slate-100"
+                    >
+                      <UserCircle className="size-4 text-emerald-600" /> الملف الشخصي
+                    </button>
+                    <button
+                      onClick={handleLogout}
+                      className="flex w-full items-center gap-3 rounded-xl border-t border-slate-200 px-3 py-2.5 text-sm font-medium text-rose-600 transition-colors hover:bg-rose-50"
+                    >
+                      <LogOut className="size-4" /> تسجيل الخروج
+                    </button>
+                  </div>
+                )}
+              </>
+            ) : (
+              <button
+                onClick={() => navigate('/login')}
+                className="flex items-center gap-1.5 rounded-full p-0.5 transition-transform hover:scale-105"
+              >
+                <span className="flex size-10 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-amber-600 text-white ring-2 ring-white">
+                  <User className="size-5" />
+                </span>
+                <ChevronDown className="size-4 text-slate-500" />
+              </button>
+            )}
           </div>
         </div>
       </header>
 
-      {/* FILTERS */}
-      <section className="bg-white border-b border-slate-200">
-        <div className="container mx-auto px-6 py-8">
-          <div className="flex flex-col items-center gap-6">
-            {/* Tab Filters */}
-            <div className="flex justify-center gap-4 flex-wrap">
-              <button
-                onClick={() => setActiveTab('all')}
-                className={`px-8 py-3 rounded-xl font-bold transition-all transform hover:scale-105 shadow-lg ${
-                  activeTab === "all"
-                    ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white"
-                    : "bg-white text-slate-900 border-2 border-slate-200 hover:border-emerald-500"
-                }`}
-              >
-                جميع المنشورات ({posts.length})
-              </button>
-              <button
-                onClick={() => setActiveTab('voluntary')}
-                className={`px-8 py-3 rounded-xl font-bold transition-all transform hover:scale-105 shadow-lg ${
-                  activeTab === 'voluntary'
-                    ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white'
-                    : 'bg-white text-slate-900 border-2 border-slate-200 hover:border-emerald-500'
-                }`}
-              >
-                تطوعية
-              </button>
+      {/* ━━━━ PAGE HERO ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+      <section className="border-b border-slate-100 bg-white py-12 md:py-16">
+        <div className="mx-auto max-w-7xl px-5 md:px-8">
+          {/* Volunteer Registration Banner */}
+          {isLoggedIn && !volunteerLoading && !isVolunteer && (
+            <div className="mb-8 rounded-2xl bg-gradient-to-r from-amber-50 via-yellow-50 to-amber-50 border-2 border-amber-200 p-6 shadow-lg">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex size-12 items-center justify-center rounded-full bg-amber-500 text-white">
+                    <HeartHandshake className="size-6" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-slate-900">سجل كمتطوع للتقديم على الخدمات</h3>
+                    <p className="text-sm text-slate-600">يجب أن تكون متطوعاً للتقديم على أي خدمة تطوعية</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => navigate('/volunteer-register')}
+                  className="flex items-center gap-2 rounded-full bg-amber-500 px-6 py-2.5 text-sm font-bold text-white transition-colors hover:bg-amber-600 shadow-md"
+                >
+                  <HeartHandshake className="size-4" />
+                  سجل كمتطوع
+                </button>
+              </div>
+            </div>
+          )}
 
+          <Reveal className="flex flex-col items-center gap-4 text-center">
+            <span className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-4 py-1.5 text-sm font-bold text-emerald-700">
+              <Sparkles className="size-4" /> فرص التطوّع
+            </span>
+            <h1 className="text-4xl font-black leading-tight text-slate-900 sm:text-5xl">
+              اختر الفرصة التي{' '}
+              <span className="bg-gradient-to-l from-emerald-600 via-amber-500 to-emerald-600 bg-clip-text text-transparent">
+                تناسبك
+              </span>
+            </h1>
+            <p className="max-w-xl text-lg text-slate-500">
+              تصفّح مئات الفرص التطوعية، وابدأ في إحداث فرق إيجابي حقيقي في مجتمعك اليوم.
+            </p>
+          </Reveal>
+        </div>
+      </section>
+
+      {/* ━━━━ FILTERS ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+      <section className="sticky top-[65px] z-30 border-b border-slate-100 bg-white/95 backdrop-blur-md py-4 shadow-sm">
+        <div className="mx-auto max-w-7xl px-5 md:px-8">
+          <div className="flex flex-col gap-4">
+            {/* Tabs */}
+            <div className="flex items-center gap-2 flex-wrap">
+              {[
+                { id: 'all', label: `جميع المنشورات (${posts.length})` },
+                { id: 'voluntary', label: 'تطوعية' },
+              ].map(tab => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`rounded-full px-5 py-2 text-sm font-bold transition-all ${
+                    activeTab === tab.id
+                      ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/20'
+                      : 'border border-slate-200 bg-white text-slate-600 hover:border-emerald-400 hover:text-emerald-700'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
             </div>
 
-            {/* Search & Additional Filters */}
-            <div className="w-full flex gap-4 flex-wrap">
-              <input
-                type="text"
-                placeholder="🔍 ابحث عن منشور..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="flex-1 min-w-[250px] px-4 py-3 border-2 border-slate-300 rounded-xl focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 outline-none transition-all"
-              />
-              
-              <select
-                value={selectedCountyID}
-                onChange={(e) => setSelectedCountyID(e.target.value)}
-                disabled={loadingCounties}
-                className="px-4 py-3 border-2 border-slate-300 rounded-xl focus:border-emerald-500 outline-none cursor-pointer transition-all disabled:opacity-60"
-              >
-                <option value="">🌍 جميع المناطق</option>
-                {counties.map((county) => (
-                  <option key={county.countyID} value={county.countyID}>
-                    📍 {county.countyName}
-                  </option>
-                ))}
-              </select>
+            {/* Search + filters row */}
+            <div className="flex flex-wrap gap-3">
+            
 
-              <select
-                value={selectedProfessionID}
-                onChange={(e) => setSelectedProfessionID(e.target.value)}
-                className="px-4 py-3 border-2 border-slate-300 rounded-xl focus:border-emerald-500 outline-none cursor-pointer transition-all"
-              >
-                <option value="">💼 جميع المهن</option>
-                {PROFESSION_OPTIONS.map((prof) => (
-                  <option key={prof.id} value={prof.id}>{prof.name}</option>
-                ))}
-              </select>
+              <div className="relative">
+                <MapPin className="absolute right-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+                <select
+                  value={selectedCountyID}
+                  onChange={(e) => setSelectedCountyID(e.target.value)}
+                  disabled={loadingCounties}
+                  className="rounded-2xl border border-slate-200 bg-white py-2.5 pr-9 pl-4 text-sm text-slate-700 outline-none transition focus:border-emerald-400 disabled:opacity-60 cursor-pointer"
+                >
+                  <option value="">جميع المناطق</option>
+                  {counties.map(c => (
+                    <option key={c.countyID} value={c.countyID}>{c.countyName}</option>
+                  ))}
+                </select>
+              </div>
+
+<div className="relative" ref={professionDropdownRef}>
+  <Briefcase className="absolute right-3 top-1/2 size-4 -translate-y-1/2 text-slate-400 z-10" />
+  <button
+    onClick={() => setProfessionDropdownOpen(!professionDropdownOpen)}
+    className="w-full rounded-2xl border border-slate-200 bg-white py-2.5 pr-9 pl-4 text-sm text-slate-700 outline-none transition focus:border-emerald-400 cursor-pointer flex items-center justify-between"
+  >
+    <span>
+      {selectedProfessionID
+        ? professions.find(p => p.professionID === selectedProfessionID)?.professionTitle || 'جميع المهن'
+        : 'جميع المهن'}
+    </span>
+    <ChevronDown className={`size-4 text-slate-400 transition-transform ${professionDropdownOpen ? 'rotate-180' : ''}`} />
+  </button>
+  
+  {professionDropdownOpen && (
+    <div className="absolute top-full left-0 right-0 mt-1 z-50 rounded-2xl border border-slate-200 bg-white shadow-lg max-h-60 overflow-y-auto">
+      <div
+        onClick={() => {
+          setSelectedProfessionID('');
+          setProfessionDropdownOpen(false);
+        }}
+        className="px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 cursor-pointer transition-colors"
+      >
+        جميع المهن
+      </div>
+      {professions.map((p) => (
+        <div
+          key={p.professionID}
+          onClick={() => {
+            setSelectedProfessionID(p.professionID);
+            setProfessionDropdownOpen(false);
+          }}
+          className={`px-4 py-2.5 text-sm cursor-pointer transition-colors ${
+            selectedProfessionID === p.professionID
+              ? 'bg-emerald-50 text-emerald-700 font-semibold'
+              : 'text-slate-700 hover:bg-slate-50'
+          }`}
+        >
+          {p.title}
+        </div>
+      ))}
+    </div>
+  )}
+</div>
             </div>
+
+            {/* AI search */}
+            <form onSubmit={handleAiSearch} className="flex gap-3 border-t border-slate-100 pt-3">
+              <div className="relative flex-1">
+                <Sparkles className="absolute right-3 top-1/2 size-4 -translate-y-1/2 text-purple-400" />
+                <input
+                  type="text"
+                  placeholder="صف ما تبحث عنه بلغتك (مثال: أريد التطوع في تعليم الأطفال في عمان)..."
+                  value={aiSearchInput}
+                  onChange={(e) => setAiSearchInput(e.target.value)}
+                  className="w-full rounded-2xl border border-purple-200 bg-white py-2.5 pr-10 pl-4 text-sm text-slate-800 outline-none transition focus:border-purple-400 focus:ring-2 focus:ring-purple-100"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={aiLoading || !aiSearchInput.trim()}
+                className="inline-flex items-center gap-2 rounded-2xl bg-purple-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {aiLoading ? '⏳' : <Sparkles className="size-4" />}
+                {aiLoading ? 'جاري البحث...' : 'توصيات ذكية'}
+              </button>
+            </form>
           </div>
         </div>
       </section>
 
-      {/* MAIN CONTENT */}
-      <section className="container mx-auto px-6 py-12">
-        {loading ? (
-          <div className="py-12">
-            <CardSkeleton count={6} />
+      {/* ━━━━ MAIN CONTENT ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+      <main className="mx-auto max-w-7xl px-5 py-10 md:px-8">
+
+        {/* AI Recommendations */}
+        {(aiRecommendations.length > 0 || aiLoading || aiError) && (
+          <div className="mb-12">
+            <div className="mb-6 flex items-center gap-3">
+              <span className="flex size-10 items-center justify-center rounded-2xl bg-purple-100">
+                <Sparkles className="size-5 text-purple-600" />
+              </span>
+              <h2 className="text-xl font-black text-slate-800">التوصيات الذكية</h2>
+            </div>
+
+            {aiLoading && (
+              <div className="py-8"><CardSkeleton count={3} /></div>
+            )}
+
+            {aiError && (
+              <div className="flex flex-col items-center gap-3 rounded-3xl border border-red-200 bg-red-50 p-8 text-center">
+                <AlertCircle className="size-10 text-red-500" />
+                <p className="font-bold text-red-700">حدث خطأ في جلب التوصيات</p>
+                <p className="text-sm text-red-600">{aiError}</p>
+                <button onClick={() => setAiError(null)} className="rounded-full bg-red-500 px-5 py-2 text-sm font-bold text-white hover:bg-red-600">
+                  إغلاق
+                </button>
+              </div>
+            )}
+
+            {aiRecommendations.length > 0 && (
+              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                {aiRecommendations.map(post => (
+                  <PostCard key={post.postID} {...cardProps(post)} />
+                ))}
+              </div>
+            )}
+
+            <div className="my-10 border-t border-slate-100" />
           </div>
+        )}
+
+        {/* Posts grid */}
+        {loading ? (
+          <div className="py-8"><CardSkeleton count={6} /></div>
         ) : error ? (
-          <div className="text-center py-20">
-            <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-            <p className="text-red-600 text-xl font-bold mb-4">حدث خطأ</p>
-            <p className="text-red-500 mb-8">{error}</p>
+          <div className="flex flex-col items-center gap-4 py-20 text-center">
+            <AlertCircle className="size-14 text-red-400" />
+            <p className="text-lg font-bold text-red-600">حدث خطأ</p>
+            <p className="text-slate-500">{error}</p>
             <button
               onClick={fetchFilteredPosts}
-              className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white px-8 py-3 rounded-xl font-bold shadow-lg transition-all"
+              className="rounded-full bg-emerald-600 px-7 py-3 font-bold text-white transition hover:bg-emerald-700"
             >
               حاول مرة أخرى
             </button>
           </div>
         ) : posts.length === 0 ? (
-          <div className="text-center py-20">
-            <div className="text-slate-300 text-7xl mb-6">📋</div>
-            <p className="text-slate-600 text-xl font-bold mb-4">لا توجد منشورات</p>
+          <div className="flex flex-col items-center gap-4 py-20 text-center">
+            <span className="text-6xl">📋</span>
+            <p className="text-lg font-bold text-slate-700">لا توجد منشورات</p>
+            <p className="text-slate-500">جرّب تغيير الفلاتر أو كن أوّل من ينشر!</p>
             {isLoggedIn && (
               <button
                 onClick={() => {
-                  setFormData({
-                    PostTitle: '',
-                    Description: '',
-                    TypeID: 1,
-                    CountyID: 3,
-                    ProfessionID: 1,
-                    imagePath: '',
-                    Status: 1,
-                  });
+                  setFormData({ PostTitle:'',Description:'',TypeID:1,CountyID:3,ProfessionID:1,imagePath:'',Status:1,Latitude:null,Longitude:null });
                   setShowCreateModal(true);
                 }}
-                className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white px-8 py-3 rounded-xl font-bold shadow-lg"
+                className="rounded-full bg-emerald-600 px-7 py-3 font-bold text-white transition hover:bg-emerald-700"
               >
                 إنشاء منشور جديد
               </button>
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {posts.map((post) => (
-              <PostCard
-                key={post.postID}
-                post={post}
-                onEdit={openEditModal}
-                onDelete={(id) => {
-                  setDeletingPostId(id);
-                  setShowConfirmDelete(true);
-                }}
-                onCardClick={handleCardClick}
-                isOwner={isLoggedIn && post.authorName === user?.username}
-                isLoggedIn={isLoggedIn}
-                currentUser={user}
-                onApplyClick={(post) => {
-                  setApplyingToPost({
-                    postID: post.postID,
-                    postTitle: post.postTitle,
-                    postTypeName: post.postTypeName
-                  });
-                  setShowApplyModal(true);
-                }}
-                appliedPosts={appliedPosts}
-              />
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {posts.map(post => (
+              <PostCard key={post.postID} {...cardProps(post)} />
             ))}
           </div>
         )}
-      </section>
+      </main>
 
-      {/* CREATE/EDIT MODAL */}
+      {/* ━━━━ CREATE / EDIT MODAL ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
       {(showCreateModal || showEditModal) && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-2xl w-full shadow-2xl max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-gradient-to-r from-emerald-500 to-teal-500 px-6 py-4 text-white flex justify-between items-center">
-              <h2 className="text-2xl font-bold">
-                {showEditModal ? '✏️ تعديل المنشور' : '➕ إضافة منشور جديد'}
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-3xl bg-white shadow-2xl">
+            {/* Modal header */}
+            <div className="sticky top-0 flex items-center justify-between rounded-t-3xl bg-emerald-600 px-6 py-4 text-white">
+              <h2 className="text-xl font-black">
+                {showEditModal ? 'تعديل المنشور' : 'إضافة منشور جديد'}
               </h2>
-              <button
-                onClick={() => {
-                  setShowCreateModal(false);
-                  setShowEditModal(false);
-                  setEditingPost(null);
-                  setSelectedCityForForm(null);
-                }}
-                className="text-2xl hover:bg-white/20 p-2 rounded-lg transition-all"
-              >
-                ✕
+              <button onClick={resetForm} className="rounded-full p-2 transition hover:bg-white/20">
+                <X className="size-5" />
               </button>
             </div>
+
             {(loadingCities || loadingCounties) && (
-              <div className="bg-blue-50 border-b-2 border-blue-200 px-6 py-3 text-blue-700 font-semibold text-center">
+              <div className="border-b border-blue-100 bg-blue-50 px-6 py-2 text-center text-sm font-semibold text-blue-700">
                 {loadingCities && '⏳ جاري تحميل المدن...'}
                 {loadingCounties && '⏳ جاري تحميل المناطق...'}
               </div>
             )}
 
-            <form onSubmit={showEditModal ? handleUpdatePost : handleCreatePost} className="p-6 space-y-4">
+            <form onSubmit={showEditModal ? handleUpdatePost : handleCreatePost} className="space-y-5 p-6">
+              {/* Title */}
               <div>
-                <label className="block text-slate-700 font-bold mb-2">
+                <label className="mb-1.5 block text-sm font-bold text-slate-700">
                   عنوان المنشور <span className="text-red-500">*</span>
                 </label>
                 <input
-                  type="text"
+                  type="text" required
                   value={formData.PostTitle}
                   onChange={(e) => setFormData({ ...formData, PostTitle: e.target.value })}
-                  className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-emerald-500 outline-none"
                   placeholder="أدخل العنوان"
-                  required
+                  className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
+                />
+              </div>
+
+              {/* Description */}
+              <div>
+                <label className="mb-1.5 block text-sm font-bold text-slate-700">
+                  الوصف <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  required rows={4}
+                  value={formData.Description}
+                  onChange={(e) => setFormData({ ...formData, Description: e.target.value })}
+                  placeholder="أدخل الوصف"
+                  className="w-full resize-none rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
                 />
               </div>
 
               <div>
-                <label className="block text-slate-700 font-bold mb-2">
-                  الوصف <span className="text-red-500">*</span>
-                </label>
-                <textarea
-                  value={formData.Description}
-                  onChange={(e) => setFormData({ ...formData, Description: e.target.value })}
-                  className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-emerald-500 outline-none h-32 resize-none"
-                  placeholder="أدخل الوصف"
-                  required
-                />
-              </div>
+  <label className="mb-1.5 block text-sm font-bold text-slate-700">
+    عدد المتطوعين المطلوبين <span className="text-red-500">*</span>
+  </label>
+  <input
+    type="number" required min={1} max={100}
+    value={formData.ServicesRequiredCount}
+    onChange={(e) => setFormData({ ...formData, ServicesRequiredCount: parseInt(e.target.value) })}
+    placeholder="أدخل عدد المتطوعين"
+    className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
+  />
+</div>
 
+              {/* Type + City */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-slate-700 font-bold mb-2">نوع المنشور</label>
+                  <label className="mb-1.5 block text-sm font-bold text-slate-700">نوع المنشور</label>
                   <select
                     value={formData.TypeID}
                     onChange={(e) => setFormData({ ...formData, TypeID: parseInt(e.target.value) })}
-                    className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-emerald-500 outline-none cursor-pointer"
+                    className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-emerald-400 cursor-pointer"
                   >
                     <option value="1">تطوعي</option>
                   </select>
                 </div>
-
                 <div>
-                  <label className="block text-slate-700 font-bold mb-2">المدينة</label>
+                  <label className="mb-1.5 block text-sm font-bold text-slate-700">المدينة</label>
                   <select
                     value={selectedCityForForm || ''}
-                    onChange={(e) => {
-                      const cityID = e.target.value ? parseInt(e.target.value) : null;
-                      console.log('🏙️ تم تغيير المدينة:', { cityID });
-                      setSelectedCityForForm(cityID);
-                    }}
+                    onChange={(e) => setSelectedCityForForm(e.target.value ? parseInt(e.target.value) : null)}
                     disabled={cities.length === 0}
-                    className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-emerald-500 outline-none cursor-pointer disabled:bg-slate-100 disabled:cursor-not-allowed"
+                    className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-emerald-400 cursor-pointer disabled:bg-slate-50 disabled:cursor-not-allowed"
                   >
                     <option value="">-- اختر مدينة --</option>
-                    {cities.length === 0 ? (
-                      <option disabled>⏳ جاري تحميل المدن...</option>
-                    ) : (
-                      cities.map(city => (
-                        <option key={city.cityID} value={city.cityID}>
-                          {city.cityName}
-                        </option>
-                      ))
-                    )}
+                    {cities.map(c => <option key={c.cityID} value={c.cityID}>{c.cityName}</option>)}
                   </select>
                 </div>
               </div>
 
+              {/* County */}
               <div>
-                <label className="block text-slate-700 font-bold mb-2">
+                <label className="mb-1.5 block text-sm font-bold text-slate-700">
                   المنطقة / المحافظة {selectedCityForForm && <span className="text-red-500">*</span>}
                 </label>
                 <select
                   value={formData.CountyID}
-                  onChange={(e) => {
-                    const newCountyID = parseInt(e.target.value);
-                    console.log('🏙️ تم تغيير المنطقة:', { oldValue: formData.CountyID, newValue: newCountyID });
-                    setFormData({ ...formData, CountyID: newCountyID });
-                  }}
+                  onChange={(e) => setFormData({ ...formData, CountyID: parseInt(e.target.value) })}
                   disabled={!selectedCityForForm || filteredCounties.length === 0}
-                  className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-emerald-500 outline-none cursor-pointer disabled:bg-slate-100 disabled:cursor-not-allowed"
+                  className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-emerald-400 cursor-pointer disabled:bg-slate-50 disabled:cursor-not-allowed"
                 >
                   {!selectedCityForForm ? (
                     <option value="">-- اختر مدينة أولاً --</option>
                   ) : filteredCounties.length === 0 ? (
-                    <option value="">⏳ لا توجد مناطق لهذه المدينة</option>
+                    <option value="">لا توجد مناطق لهذه المدينة</option>
                   ) : (
                     <>
                       <option value="">-- اختر منطقة --</option>
-                      {filteredCounties.map(county => (
-                        <option key={county.countyID} value={county.countyID}>
-                          {county.countyName}
-                        </option>
-                      ))}
+                      {filteredCounties.map(c => <option key={c.countyID} value={c.countyID}>{c.countyName}</option>)}
                     </>
                   )}
                 </select>
               </div>
 
+              {/* Profession */}
               <div>
-                <label className="block text-slate-700 font-bold mb-2">صورة المنشور (اختياري)</label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageFileChange}
-                  disabled={imageUploading}
-                  className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-emerald-500 outline-none file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-emerald-50 file:text-emerald-700 file:font-semibold hover:file:bg-emerald-100 disabled:opacity-50"
-                />
-                {imageUploading && (
-                  <p className="mt-2 text-sm text-slate-500">⏳ جاري تحضير الصورة...</p>
+<select
+  value={formData.ProfessionID}
+  onChange={(e) => setFormData({ ...formData, ProfessionID: Number(e.target.value) })}
+  className="..."
+>
+  <option value="">اختر المهنة</option>
+  
+{professions.map((p) => (
+  <option key={p.professionID} value={p.professionID} style={{color: '#1e293b', backgroundColor: 'white'}}>
+    {p.professionTitle}
+  </option>
+))}
+</select>
+              </div>
+
+              {/* Location */}
+              <div>
+                <button
+                  type="button" onClick={openLocationModal}
+                  className="w-full rounded-2xl border-2 border-dashed border-emerald-300 py-3 text-sm font-bold text-emerald-700 transition hover:border-emerald-500 hover:bg-emerald-50"
+                >
+                  <MapPin className="mr-1 inline size-4" /> تحديد الموقع على الخريطة
+                </button>
+                {formData.Latitude != null && (
+                  <p className="mt-1.5 text-xs font-semibold text-emerald-700">
+                    ✅ تم تحديد الموقع ({formData.Latitude.toFixed(5)}, {formData.Longitude.toFixed(5)})
+                  </p>
                 )}
-                <p className="mt-2 text-xs text-slate-500">اختر صورة من جهازك — لا حاجة لرابط https</p>
-                <label className="block text-slate-600 text-sm mt-3 mb-1">أو رابط من الإنترنت</label>
+              </div>
+
+              {/* Image */}
+              <div>
+                <label className="mb-1.5 block text-sm font-bold text-slate-700">صورة المنشور (اختياري)</label>
+                <input
+                  type="file" accept="image/*"
+                  onChange={handleImageFileChange} disabled={imageUploading}
+                  className="w-full rounded-2xl border border-slate-200 px-4 py-2.5 text-sm file:mr-4 file:rounded-lg file:border-0 file:bg-emerald-50 file:px-3 file:py-1.5 file:text-xs file:font-bold file:text-emerald-700 hover:file:bg-emerald-100 disabled:opacity-50"
+                />
+                {imageUploading && <p className="mt-1 text-xs text-slate-500">⏳ جاري تحضير الصورة...</p>}
+                <label className="mb-1 mt-3 block text-xs text-slate-500">أو رابط من الإنترنت</label>
                 <input
                   type="url"
                   value={formData.imagePath.startsWith('data:') ? '' : formData.imagePath}
                   onChange={(e) => setFormData({ ...formData, imagePath: e.target.value })}
-                  className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-emerald-500 outline-none"
                   placeholder="https://example.com/image.jpg"
+                  className="w-full rounded-2xl border border-slate-200 px-4 py-2.5 text-sm outline-none transition focus:border-emerald-400"
                 />
                 {formData.imagePath && (
                   <div className="mt-3">
                     <img
-                      src={getImagePreviewUrl(formData.imagePath)}
-                      alt="معاينة"
-                      className="w-full h-48 object-cover rounded-xl"
-                      onError={(e) => {
-                        e.target.style.display = 'none';
-                      }}
+                      src={getImagePreviewUrl(formData.imagePath)} alt="معاينة"
+                      className="h-40 w-full rounded-2xl object-cover"
+                      onError={(e) => { e.target.style.display = 'none'; }}
                     />
-                    <button
-                      type="button"
-                      onClick={() => setFormData({ ...formData, imagePath: '' })}
-                      className="mt-2 text-sm text-red-600 hover:text-red-700"
-                    >
+                    <button type="button" onClick={() => setFormData({ ...formData, imagePath: '' })}
+                      className="mt-1.5 text-xs text-red-500 hover:text-red-700">
                       إزالة الصورة
                     </button>
                   </div>
                 )}
               </div>
 
-              <div className="flex gap-3 pt-4 border-t">
+              {/* Actions */}
+              <div className="flex gap-3 border-t border-slate-100 pt-4">
                 <button
-                  type="submit"
-                  disabled={loading}
-                  className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white py-3 rounded-xl font-bold transition-all disabled:opacity-50"
+                  type="submit" disabled={loading}
+                  className="flex-1 rounded-2xl bg-emerald-600 py-3 font-bold text-white transition hover:bg-emerald-700 disabled:opacity-50"
                 >
                   {loading ? '⏳ جاري...' : showEditModal ? 'تحديث' : 'إنشاء'}
                 </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowCreateModal(false);
-                    setShowEditModal(false);
-                    setEditingPost(null);
-                    setSelectedCityForForm(null);
-                  }}
-                  className="flex-1 bg-slate-200 hover:bg-slate-300 text-slate-800 py-3 rounded-xl font-bold transition-all"
+                <button type="button" onClick={resetForm}
+                  className="flex-1 rounded-2xl bg-slate-100 py-3 font-bold text-slate-700 transition hover:bg-slate-200"
                 >
                   إلغاء
                 </button>
@@ -929,27 +1068,59 @@ function Posts() {
         </div>
       )}
 
-      {/* DELETE CONFIRMATION MODAL */}
-      {showConfirmDelete && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-sm w-full shadow-2xl p-6">
-            <h3 className="text-2xl font-bold text-slate-800 mb-4">تأكيد الحذف</h3>
-            <p className="text-slate-600 mb-8">هل أنت متأكد من رغبتك في حذف هذا المنشور؟</p>
-            <div className="flex gap-4">
-              <button
-                onClick={handleDeletePost}
-                disabled={loading}
-                className="flex-1 bg-red-500 hover:bg-red-600 text-white py-3 rounded-xl font-bold transition-all disabled:opacity-50"
-              >
-                {loading ? '⏳ جاري...' : 'حذف'}
+      {/* ━━━━ LOCATION MODAL ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+      {showLocationModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+          <div className="max-h-[90vh] w-full max-w-3xl overflow-hidden rounded-3xl bg-white shadow-2xl">
+            <div className="flex items-center justify-between rounded-t-3xl bg-emerald-600 px-6 py-4 text-white">
+              <h3 className="text-lg font-black">تحديد الموقع على الخريطة</h3>
+              <button onClick={() => setShowLocationModal(false)} className="rounded-full p-2 transition hover:bg-white/20">
+                <X className="size-5" />
               </button>
-              <button
-                onClick={() => {
-                  setShowConfirmDelete(false);
-                  setDeletingPostId(null);
-                }}
-                className="flex-1 bg-slate-200 hover:bg-slate-300 text-slate-800 py-3 rounded-xl font-bold transition-all"
-              >
+            </div>
+            <div className="space-y-4 p-5">
+              <p className="text-sm text-slate-500">اضغط على الخريطة لاختيار الموقع، ثم أغلق النافذة عند الانتهاء.</p>
+              <div className="h-96 overflow-hidden rounded-2xl border border-slate-200">
+                <MapContainer center={selectedLocation || defaultMapCenter} zoom={10} scrollWheelZoom className="h-full w-full">
+                  <TileLayer
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                  />
+                  <LocationSelector location={selectedLocation} onSelect={handleLocationSelect} />
+                </MapContainer>
+              </div>
+              <div className="flex items-center justify-between">
+                <p className="text-xs text-slate-500">
+                  {selectedLocation
+                    ? `✅ الموقع: ${selectedLocation.lat.toFixed(5)}, ${selectedLocation.lng.toFixed(5)}`
+                    : 'اضغط على الخريطة لتحديد الموقع'}
+                </p>
+                <button onClick={() => setShowLocationModal(false)}
+                  className="rounded-2xl bg-slate-100 px-5 py-2 text-sm font-bold text-slate-700 transition hover:bg-slate-200">
+                  تم
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ━━━━ DELETE CONFIRM MODAL ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+      {showConfirmDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-sm rounded-3xl bg-white p-8 shadow-2xl">
+            <div className="mb-4 flex size-14 items-center justify-center rounded-full bg-red-100 mx-auto">
+              <Trash2 className="size-7 text-red-500" />
+            </div>
+            <h3 className="mb-2 text-center text-xl font-black text-slate-800">تأكيد الحذف</h3>
+            <p className="mb-6 text-center text-slate-500">هل أنت متأكد من رغبتك في حذف هذا المنشور؟ لا يمكن التراجع.</p>
+            <div className="flex gap-3">
+              <button onClick={handleDeletePost} disabled={loading}
+                className="flex-1 rounded-2xl bg-red-500 py-3 font-bold text-white transition hover:bg-red-600 disabled:opacity-50">
+                {loading ? '⏳' : 'حذف'}
+              </button>
+              <button onClick={() => { setShowConfirmDelete(false); setDeletingPostId(null); }}
+                className="flex-1 rounded-2xl bg-slate-100 py-3 font-bold text-slate-700 transition hover:bg-slate-200">
                 إلغاء
               </button>
             </div>
@@ -957,7 +1128,7 @@ function Posts() {
         </div>
       )}
 
-      {/* SERVICE DETAILS MODAL */}
+      {/* ━━━━ SERVICE DETAILS MODAL ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
       {showServiceModal && selectedService && (
         <ServiceDetailsModal
           service={selectedService}
@@ -965,65 +1136,46 @@ function Posts() {
           onClose={() => setShowServiceModal(false)}
           onApply={(post) => {
             setShowServiceModal(false);
-            setApplyingToPost({
-              postID: post.postID,
-              postTitle: post.postTitle,
-              postTypeName: post.postTypeName
-            });
+            setApplyingToPost({ postID: post.postID, postTitle: post.postTitle, postTypeName: post.postTypeName });
             setShowApplyModal(true);
           }}
-          onLoginRequired={() => {
-            setShowServiceModal(false);
-            setShowLoginRequired(true);
-          }}
+          onLoginRequired={() => { setShowServiceModal(false); setShowLoginRequired(true); }}
         />
       )}
 
-      {/* APPLY FOR SERVICE MODAL */}
+      {/* ━━━━ APPLY MODAL ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
       {showApplyModal && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full shadow-2xl">
-            <div className="bg-gradient-to-r from-emerald-500 to-teal-500 px-8 py-6 rounded-t-3xl">
-              <h2 className="text-2xl font-bold text-white">🤝 تقديم الطلب</h2>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md overflow-hidden rounded-3xl bg-white shadow-2xl">
+            <div className="bg-emerald-600 px-8 py-5">
+              <h2 className="text-xl font-black text-white">تقديم الطلب</h2>
+              <p className="mt-1 text-sm text-emerald-100">{applyingToPost?.postTitle}</p>
             </div>
-
             <div className="p-8">
-              <h3 className="text-lg font-bold text-slate-800 mb-4">
-                {applyingToPost?.postTitle}
-              </h3>
-              
-              <div className="mb-6">
-                <label className="block text-slate-700 font-bold mb-2">
-                  وصف طلبك
-                </label>
-                <textarea
-                  value={applyMessage}
-                  onChange={(e) => setApplyMessage(e.target.value)}
-                  className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 outline-none h-32 resize-none"
-                  placeholder="اكتب وصف طلبك هنا... (اختياري)"
-                />
-              </div>
-
-              <div className="flex gap-3">
+              <label className="mb-2 block text-sm font-bold text-slate-700">وصف طلبك (اختياري)</label>
+              <textarea
+                value={applyMessage}
+                onChange={(e) => setApplyMessage(e.target.value)}
+                rows={4} placeholder="اكتب وصف طلبك هنا..."
+                className="w-full resize-none rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
+              />
+              <div className="mt-5 flex gap-3">
                 <button
                   onClick={handleApplyToService}
                   disabled={loading || appliedPosts.has(applyingToPost?.postID)}
-                  className={`flex-1 py-4 rounded-xl font-bold transition-all shadow-lg ${
+                  className={`flex-1 rounded-2xl py-3 font-bold transition ${
                     appliedPosts.has(applyingToPost?.postID)
-                      ? 'bg-slate-400 text-white cursor-not-allowed opacity-60'
-                      : 'bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white disabled:opacity-50'
+                      ? 'cursor-not-allowed bg-slate-300 text-slate-500'
+                      : 'bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50'
                   }`}
                 >
-                  {loading ? '⏳ جاري الإرسال...' : appliedPosts.has(applyingToPost?.postID) ? '✅ تم التقديم' : '📤 إرسال الطلب'}
+                  {loading ? '⏳ جاري الإرسال...'
+                    : appliedPosts.has(applyingToPost?.postID) ? '✅ تم التقديم' : 'إرسال الطلب'}
                 </button>
                 <button
-                  onClick={() => {
-                    setShowApplyModal(false);
-                    setApplyMessage('');
-                    setApplyingToPost(null);
-                  }}
+                  onClick={() => { setShowApplyModal(false); setApplyMessage(''); setApplyingToPost(null); }}
                   disabled={loading}
-                  className="flex-1 bg-slate-200 hover:bg-slate-300 text-slate-800 py-4 rounded-xl font-bold transition-all"
+                  className="flex-1 rounded-2xl bg-slate-100 py-3 font-bold text-slate-700 transition hover:bg-slate-200"
                 >
                   إلغاء
                 </button>
@@ -1033,35 +1185,24 @@ function Posts() {
         </div>
       )}
 
-      {/* PAYMENT MODAL */}
-
-      {/* LOGIN REQUIRED MODAL */}
+      {/* ━━━━ LOGIN REQUIRED MODAL ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
       {showLoginRequired && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-8 text-center shadow-2xl">
-            <div className="w-20 h-20 bg-rose-100 rounded-full flex items-center justify-center mx-auto mb-6">
-              <span className="text-4xl">⚠️</span>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-sm rounded-3xl bg-white p-8 text-center shadow-2xl">
+            <div className="mx-auto mb-5 flex size-16 items-center justify-center rounded-full bg-amber-100">
+              <span className="text-3xl">⚠️</span>
             </div>
-            <h2 className="text-2xl font-bold text-slate-800 mb-4">
-              الرجاء تسجيل الدخول
-            </h2>
-            <p className="text-slate-600 mb-8">
-              يجب عليك تسجيل الدخول للمتابعة
-            </p>
+            <h2 className="mb-2 text-xl font-black text-slate-800">الرجاء تسجيل الدخول</h2>
+            <p className="mb-6 text-slate-500">يجب عليك تسجيل الدخول للمتابعة</p>
             <div className="flex gap-3">
               <button
-                onClick={() => {
-                  setShowLoginRequired(false);
-                  navigate('/login');
-                }}
-                className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white py-4 rounded-xl font-bold transition-all shadow-lg"
+                onClick={() => { setShowLoginRequired(false); navigate('/login'); }}
+                className="flex-1 rounded-2xl bg-emerald-600 py-3 font-bold text-white transition hover:bg-emerald-700"
               >
                 تسجيل الدخول
               </button>
-              <button
-                onClick={() => setShowLoginRequired(false)}
-                className="flex-1 bg-slate-200 hover:bg-slate-300 text-slate-800 py-4 rounded-xl font-bold transition-all"
-              >
+              <button onClick={() => setShowLoginRequired(false)}
+                className="flex-1 rounded-2xl bg-slate-100 py-3 font-bold text-slate-700 transition hover:bg-slate-200">
                 إلغاء
               </button>
             </div>
@@ -1072,214 +1213,151 @@ function Posts() {
   );
 }
 
-// ==================
-// COMPONENT: PostCard
-// ==================
+// ═══════════════════════════════════════════════════════════════════════════════
+// PostCard component
+// ═══════════════════════════════════════════════════════════════════════════════
 function PostCard({ post, onEdit, onDelete, onCardClick, isOwner, isLoggedIn, currentUser, onApplyClick, appliedPosts }) {
-  const [isHover, setIsHover] = useState(false);
   const hasApplied = appliedPosts && appliedPosts.has(post.postID);
-  const isPostOwner = isLoggedIn && post.authorName === currentUser?.username;
+  const imageUrl = getPostImage(post);
 
   return (
-    <div
-      onMouseEnter={() => setIsHover(true)}
-      onMouseLeave={() => setIsHover(false)}
-      className={`bg-white rounded-3xl overflow-hidden shadow-xl transition-all duration-300 border-2 ${
-        isHover ? "transform scale-105 shadow-2xl border-emerald-300" : "border-slate-100"
-      } ${post.isComplete ? "opacity-75" : ""}`}
+    <article
+      className="group flex flex-col overflow-hidden rounded-3xl border border-slate-100 bg-white transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:shadow-emerald-600/5 cursor-pointer"
+      onClick={() => onCardClick(post)}
     >
-      <div className="relative">
+      {/* Image */}
+      <div className="relative aspect-[16/11] overflow-hidden">
         <img
-          src={getPostImage(post)}
+          src={imageUrl}
           alt={post.postTitle}
-          className={`w-full h-52 object-cover transition-transform duration-300 ${
-            isHover ? "scale-110" : "scale-100"
-          } cursor-pointer`}
-          onClick={() => onCardClick(post)}
-          onError={(e) => {
-            if (e.target.src !== DEFAULT_POST_IMAGE) {
-              e.target.src = DEFAULT_POST_IMAGE;
-            }
-          }}
+          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+          onError={(e) => { if (e.target.src !== DEFAULT_POST_IMAGE) e.target.src = DEFAULT_POST_IMAGE; }}
         />
-        <span className="absolute top-3 right-3 px-4 py-2 rounded-xl text-sm font-bold shadow-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white">
-          {post.postTypeName || "تطوعي"}
+        {/* Badges */}
+        <span className="absolute right-3 top-3 rounded-full bg-emerald-600 px-3 py-1 text-xs font-bold text-white">
+          {post.postTypeName || 'تطوعي'}
         </span>
         {post.isComplete && (
-          <span className="absolute top-3 left-3 bg-emerald-500 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-xl">
-            مكتملة ✓
-          </span>
+          <span className="absolute left-3 top-3 rounded-full bg-emerald-500 px-3 py-1 text-xs font-bold text-white">مكتملة ✓</span>
         )}
         {!post.isComplete && isPostLocked(post) && (
-          <span className="absolute top-3 left-3 bg-amber-100 text-amber-800 border border-amber-200 px-3 py-1.5 rounded-xl text-sm font-bold shadow-sm">
-            🔒 مقفل
-          </span>
+          <span className="absolute left-3 top-3 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-bold text-amber-700">🔒 مقفل</span>
         )}
       </div>
 
-      <div className="p-6 text-right">
-        <h3 
-          className="text-xl font-bold mb-3 text-slate-800 cursor-pointer hover:text-emerald-600 transition-colors"
-          onClick={() => onCardClick(post)}
+      {/* Body */}
+      <div className="flex flex-1 flex-col p-5 text-right">
+        <h3
+          className="mb-2 text-lg font-extrabold text-slate-800 transition-colors hover:text-emerald-600 line-clamp-1"
         >
           {post.postTitle}
         </h3>
-        <p className="text-slate-600 mb-4 leading-relaxed line-clamp-2">{post.description}</p>
-        <div className="space-y-2 mb-4">
-          <div className="flex items-center gap-2 text-slate-500 text-sm font-semibold">
-            <span>📍</span>
-            {post.countyName || "غير محدد"}
-          </div>
-          {post.authorName && (
-            <div className="flex items-center gap-2 text-slate-500 text-sm font-semibold">
-              <span>👤</span>
-              {post.authorName}
-            </div>
-          )}
-          {post.professionName && (
-            <div className="flex items-center gap-2 text-slate-500 text-sm font-semibold">
-              <span>💼</span>
-              {post.professionName}
-            </div>
-          )}
+        <p className="mb-4 text-sm leading-relaxed text-slate-500 line-clamp-2">{post.description}</p>
+
+        <div className="mb-4 flex flex-col gap-1.5 text-xs text-slate-400">
+          <span className="flex items-center gap-1.5"><MapPin className="size-3.5 text-amber-500" /> {post.countyName || 'غير محدد'}</span>
+          {post.authorName && <span className="flex items-center gap-1.5"><User className="size-3.5 text-emerald-500" /> {post.authorName}</span>}
+          {post.professionName && <span className="flex items-center gap-1.5"><Briefcase className="size-3.5 text-emerald-500" /> {post.professionName}</span>}
           {post.publishDateTime && (
-            <div className="text-slate-400 text-xs mt-3 font-semibold">
-              📅 {new Date(post.publishDateTime).toLocaleDateString('ar-JO')}
-            </div>
+            <span className="flex items-center gap-1.5">
+              <CalendarDays className="size-3.5 text-slate-400" />
+              {new Date(post.publishDateTime).toLocaleDateString('ar-JO')}
+            </span>
           )}
         </div>
 
-        {/* Owner Actions */}
+        {/* Owner actions */}
         {isOwner && (
-          <div className="flex gap-2 pt-4 border-t">
-            <button
-              onClick={() => onEdit(post)}
-              className="flex-1 bg-blue-100 hover:bg-blue-200 text-blue-700 px-3 py-2 rounded-lg font-bold text-sm transition-all"
-            >
+          <div className="mt-auto flex gap-2 border-t border-slate-100 pt-4">
+            <button onClick={(e) => { e.stopPropagation(); onEdit(post); }}
+              className="flex-1 rounded-xl bg-blue-50 py-2 text-xs font-bold text-blue-700 transition hover:bg-blue-100">
               ✏️ تعديل
             </button>
-            <button
-              onClick={() => onDelete(post.postID)}
-              className="flex-1 bg-red-100 hover:bg-red-200 text-red-700 px-3 py-2 rounded-lg font-bold text-sm transition-all"
-            >
+            <button onClick={(e) => { e.stopPropagation(); onDelete(post.postID); }}
+              className="flex-1 rounded-xl bg-red-50 py-2 text-xs font-bold text-red-600 transition hover:bg-red-100">
               🗑️ حذف
             </button>
           </div>
         )}
 
-        {/* Apply Button - Show only if user is logged in, not owner, and post is not complete */}
+        {/* Apply button */}
         {!isOwner && isLoggedIn && !post.isComplete && !isPostLocked(post) && (
-          <div className="pt-4 border-t mt-4">
+          <div className="mt-auto border-t border-slate-100 pt-4">
             <button
-              onClick={() => onApplyClick(post)}
+              onClick={(e) => { e.stopPropagation(); onApplyClick(post); }}
               disabled={hasApplied}
-              className={`w-full py-3 rounded-xl font-bold transition-all shadow-lg text-sm font-semibold ${
+              className={`w-full rounded-2xl py-2.5 text-sm font-bold transition ${
                 hasApplied
-                  ? 'bg-slate-300 text-slate-600 cursor-not-allowed opacity-60'
-                  : 'bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white transform hover:scale-105'
+                  ? 'cursor-not-allowed bg-slate-100 text-slate-400'
+                  : 'bg-emerald-600 text-white hover:bg-emerald-700 hover:shadow-md hover:shadow-emerald-600/20'
               }`}
             >
-              {hasApplied ? '✅ تم التقدم' : '🤝 تقدم للخدمة'}
+              {hasApplied ? '✅ تم التقدم' : 'تقدم للخدمة'}
             </button>
           </div>
         )}
       </div>
-    </div>
+    </article>
   );
 }
 
-// ==================
-// COMPONENT: ServiceDetailsModal
-// ==================
+// ═══════════════════════════════════════════════════════════════════════════════
+// ServiceDetailsModal component
+// ═══════════════════════════════════════════════════════════════════════════════
 function ServiceDetailsModal({ service, isLoggedIn, onClose, onApply, onLoginRequired }) {
   return (
-    <div
-      className="fixed inset-0 bg-black/70 backdrop-blur-sm flex justify-center items-center z-50 p-5"
-      onClick={onClose}
-    >
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm" onClick={onClose}>
       <div
-        className="bg-white rounded-3xl w-full max-w-lg overflow-hidden relative shadow-2xl"
+        className="relative w-full max-w-lg overflow-hidden rounded-3xl bg-white shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <button
-          onClick={onClose}
-          className="absolute left-4 top-4 bg-white/90 backdrop-blur-sm rounded-full w-12 h-12 flex items-center justify-center text-2xl hover:bg-rose-500 hover:text-white transition-all z-10 shadow-lg"
-        >
-          ✕
+        {/* Close */}
+        <button onClick={onClose}
+          className="absolute left-4 top-4 z-10 flex size-10 items-center justify-center rounded-full bg-white/90 shadow-md transition hover:bg-red-50 hover:text-red-600">
+          <X className="size-5" />
         </button>
 
-        <img
-          src={getPostImage(service)}
-          alt={service.postTitle}
-          className="w-full h-64 object-cover"
-          onError={(e) => {
-            if (e.target.src !== DEFAULT_POST_IMAGE) {
-              e.target.src = DEFAULT_POST_IMAGE;
-            }
-          }}
-        />
+        {/* Image */}
+        <div className="relative aspect-[16/9] overflow-hidden">
+          <img
+            src={getPostImage(service)} alt={service.postTitle}
+            className="h-full w-full object-cover"
+            onError={(e) => { if (e.target.src !== DEFAULT_POST_IMAGE) e.target.src = DEFAULT_POST_IMAGE; }}
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+          <span className="absolute bottom-4 right-4 rounded-full bg-emerald-600 px-3 py-1 text-xs font-bold text-white">
+            {service.postTypeName || 'تطوعي'}
+          </span>
+        </div>
 
-        <div className="p-8 text-right">
-          <div className="flex justify-between items-start mb-4">
-            <h2 className="text-2xl font-bold flex-1 text-slate-800">
-              {service.postTitle}
-            </h2>
-            {service.isComplete && (
-              <span className="bg-emerald-500 text-white px-4 py-2 rounded-full text-sm font-bold shadow-lg">
-                مكتملة ✓
+        {/* Content */}
+        <div className="p-7 text-right">
+          <h2 className="mb-4 text-2xl font-black text-slate-800">{service.postTitle}</h2>
+
+          <div className="mb-5 flex flex-col gap-2 text-sm text-slate-500">
+            {service.authorName && <span className="flex items-center gap-2"><User className="size-4 text-emerald-500" /> {service.authorName}</span>}
+            {service.professionName && <span className="flex items-center gap-2"><Briefcase className="size-4 text-emerald-500" /> {service.professionName}</span>}
+            {service.countyName && <span className="flex items-center gap-2"><MapPin className="size-4 text-amber-500" /> {service.countyName}</span>}
+            {service.publishDateTime && (
+              <span className="flex items-center gap-2">
+                <CalendarDays className="size-4 text-slate-400" />
+                {new Date(service.publishDateTime).toLocaleDateString('ar-JO')}
               </span>
             )}
           </div>
-          
-          {service.authorName && (
-            <p className="text-slate-600 mb-2 font-semibold">
-              <strong>👤 الناشر:</strong> {service.authorName}
-            </p>
-          )}
-          
-          {service.professionName && (
-            <p className="text-slate-600 mb-2 font-semibold">
-              <strong>💼 المجال:</strong> {service.professionName}
-            </p>
-          )}
-          
-          {service.countyName && (
-            <p className="text-slate-600 mb-2 font-semibold">
-              <strong>📍 الموقع:</strong> {service.countyName}
-            </p>
-          )}
-          
-          {service.postTypeName && (
-            <p className="text-slate-600 mb-2 font-semibold">
-              <strong>🏷️ النوع:</strong> {service.postTypeName}
-            </p>
-          )}
-          
-          {service.publishDateTime && (
-            <p className="text-slate-500 text-sm mb-6">
-              📅 نُشر في: {new Date(service.publishDateTime).toLocaleDateString('ar-JO')}
-            </p>
-          )}
-          
-          <p className="text-slate-700 mb-8 leading-relaxed">
-            {service.description}
-          </p>
+
+          <p className="mb-6 leading-relaxed text-slate-600">{service.description}</p>
 
           {!service.isComplete && !isPostLocked(service) && isLoggedIn && (
-            <button
-              className="w-full py-4 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white rounded-xl font-bold text-lg transition-all shadow-lg transform hover:scale-105"
-              onClick={() => onApply(service)}
-            >
+            <button onClick={() => onApply(service)}
+              className="w-full rounded-2xl bg-emerald-600 py-3.5 font-bold text-white transition hover:bg-emerald-700 hover:shadow-lg hover:shadow-emerald-600/20">
               التقديم للخدمة
             </button>
           )}
-          
           {!service.isComplete && !isPostLocked(service) && !isLoggedIn && (
-            <button
-              className="w-full py-4 bg-slate-400 hover:bg-slate-500 text-white rounded-xl font-bold text-lg cursor-pointer transition-all"
-              onClick={onLoginRequired}
-            >
-              سجّل دخول للتقديم
+            <button onClick={onLoginRequired}
+              className="w-full rounded-2xl bg-slate-200 py-3.5 font-bold text-slate-700 transition hover:bg-slate-300">
+              سجّل دخولك للتقديم
             </button>
           )}
         </div>
@@ -1287,6 +1365,5 @@ function ServiceDetailsModal({ service, isLoggedIn, onClose, onApply, onLoginReq
     </div>
   );
 }
-
 
 export default Posts;

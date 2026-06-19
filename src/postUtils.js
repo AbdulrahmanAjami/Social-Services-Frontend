@@ -36,10 +36,12 @@ export const resolveImageUrl = (path) => {
   if (path.startsWith('//')) return `https:${path}`;
   if (/^www\./i.test(path)) return `https://${path}`;
 
-  // مسار نسبي من السيرver (مثل uploads/photo.jpg)
-  return path.startsWith('/')
-    ? `${API_ORIGIN}${path}`
-    : `${API_ORIGIN}/${path}`;
+  // حول الـ backslash لـ forward slash
+  const cleanPath = path.replace(/\\/g, '/');
+
+  return cleanPath.startsWith('/')
+    ? `${API_ORIGIN}${cleanPath}`
+    : `${API_ORIGIN}/${cleanPath}`;
 };
 
 export const getImagePreviewUrl = (path) => {
@@ -91,8 +93,12 @@ export const fileToCompressedDataUrl = (
 
 export const getPostImage = (post) => {
   const raw = getRawImagePath(post);
-  if (!raw) return DEFAULT_POST_IMAGE;
-  return resolveImageUrl(raw);
+  if (raw) return resolveImageUrl(raw);
+
+  // إذا لم توجد صورة، نولد صورة عشوائية مميزة لكل منشور باستخدام seed
+  // نستخدم postID أو عنوان المنشور كـ seed لضمان تباين ثابت لكل منشور
+  const seed = (post?.postID ?? post?.id ?? post?.PostID ?? post?.postTitle ?? Math.random()).toString();
+  return `https://picsum.photos/seed/${encodeURIComponent(seed)}/800/600`;
 };
 
 export const normalizePost = (post) => {

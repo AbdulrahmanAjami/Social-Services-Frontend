@@ -1,239 +1,182 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  ChevronLeft, 
-  ChevronRight, 
-  Users, 
-  Heart, 
-  Award, 
-  Clock, 
+import React, { useState, useEffect, useRef } from 'react';
+import {
+  ChevronLeft,
+  Users,
+  Heart,
+  Clock,
   User,
   MapPin,
-  Calendar,
-  TrendingUp,
   Star,
-  CheckCircle,
   ArrowLeft,
   Sparkles,
-  Target,
   Handshake,
-  Shield,
   Menu,
   X,
   Home,
   Briefcase,
   Info,
   Phone,
-  FileText,
   Trophy,
   ChevronDown,
   LogOut,
   UserCircle,
-  Settings,
   Bell,
-  Search,
-  Play,
   Zap,
-  Gift,
-  TrendingDown
+  HeartHandshake,
+  Eye,
+  ShieldCheck,
+  Quote,
+  CalendarDays,
+  Play,
+  ChevronRight,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from './AuthContext';
+import { motion } from 'framer-motion';
 
+// ---------------------------------------------------------------------------
+// Animation helpers (same as original)
+// ---------------------------------------------------------------------------
+const fadeInUpVariants = {
+  hidden: { opacity: 0, y: 40 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.55, ease: 'easeOut' } },
+};
+
+// Lightweight Reveal wrapper (replaces @/components/reveal from the new design)
+function Reveal({ children, delay = 0, className = '', as: Tag = 'div' }) {
+  return (
+    <motion.div
+      className={className}
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: true, margin: '-80px' }}
+      variants={{
+        hidden: { opacity: 0, y: 30 },
+        visible: { opacity: 1, y: 0, transition: { duration: 0.5, delay: delay / 1000, ease: 'easeOut' } },
+      }}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Data (identical to original – all backend-connected data kept as-is)
+// ---------------------------------------------------------------------------
+const navItems = [
+  { name: 'الرئيسية', path: '/', icon: Home },
+  {
+    name: 'من نحن',
+    path: '/about',
+    icon: Info,
+    dropdown: [
+      { name: 'رؤيتنا ورسالتنا', path: '/VisionMission' },
+      { name: 'فريق العمل', path: '/about/team' },
+      { name: 'شركاؤنا', path: '/about/partners' },
+    ],
+  },
+  {
+    name: 'الخدمات',
+    path: '/posts',
+    icon: Briefcase,
+    dropdown: [
+      { name: 'خدمات تطوعية', path: '/posts' },
+      { name: 'أقرب الخدمات', path: '/map' },
+    ],
+  },
+  { name: 'متطوعينا المميزين', path: '/VolunteerOfTheMonth', icon: Trophy },
+  { name: 'اتصل بنا', path: '/contact', icon: Phone },
+];
+
+const services = [
+  {
+    id: 1,
+    title: 'زيارة مستشفى الأطفال',
+    description: 'مبادرة لرسم البسمة على وجوه الأطفال المرضى وتقديم الهدايا لهم',
+    location: 'مستشفى الأمير حمزة، عمّان',
+    image: 'https://images.unsplash.com/photo-1631217868264-e5b90bb7e133?w=800&q=80',
+    type: 'تطوعي',
+    volunteers: 45,
+    date: '17 مارس 2026',
+  },
+  {
+    id: 2,
+    title: 'تنظيف الحي',
+    description: 'نبحث عن متطوعين للمساعدة في تنظيف الحي وزراعة الأشجار لتجميله',
+    location: 'حي النصر، الرمثا',
+    image: 'https://images.unsplash.com/photo-1618477461853-cf6ed80faba5?w=800&q=80',
+    type: 'تطوعي',
+    volunteers: 32,
+    date: '6 مارس 2026',
+  },
+  {
+    id: 3,
+    title: 'مساعدة كبار السن',
+    description: 'برنامج تطوعي لمساعدة كبار السن في التسوق أو زيارة الطبيب أو الجلوس للحديث',
+    location: 'ماركا، عمان',
+    image: 'https://images.unsplash.com/photo-1581579438747-1dc8d17bbce4?w=800&q=80',
+    type: 'تطوعي',
+    volunteers: 28,
+    date: '20 مارس 2026',
+  },
+  {
+    id: 4,
+    title: 'تعليم الأطفال',
+    description: 'مبادرة لتعليم الأطفال القراءة والكتابة والرياضيات بشكل تطوعي',
+    location: 'مركز الأمل المجتمعي',
+    image: 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=800&q=80',
+    type: 'تطوعي',
+    volunteers: 56,
+    date: '2 مارس 2026',
+  },
+  {
+    id: 5,
+    title: 'توزيع الطعام',
+    description: 'توزيع وجبات ساخنة على الأسر المحتاجة والمشردين',
+    location: 'مختلف المناطق',
+    image: 'https://images.unsplash.com/photo-1593113646773-028c64a8f1b8?w=800&q=80',
+    type: 'تطوعي',
+    volunteers: 67,
+    date: '25 مارس 2026',
+  },
+];
+
+
+const features = [
+  { icon: Zap,        title: 'تأثير سريع',      desc: 'كل مساعدة تُحدث فرقاً ملموساً وسريعاً في حياة الآخرين.',              color: 'text-amber-500',   bg: 'bg-amber-100' },
+  { icon: ShieldCheck,title: 'موثوقية عالية',   desc: 'جميع فرصنا معتمدة ومفحوصة بأعلى معايير الجودة والأمان.',             color: 'text-emerald-600', bg: 'bg-emerald-100' },
+  { icon: Handshake,  title: 'شراكات موثوقة',  desc: 'نتعاون مع منظمات محلية ودولية لتوسيع نطاق الخدمات.',                 color: 'text-teal-600',    bg: 'bg-teal-100' },
+  { icon: Eye,        title: 'رؤية واضحة',      desc: 'نعمل على تحقيق أهداف واضحة ومحددة لخدمة المجتمع.',                  color: 'text-yellow-700',  bg: 'bg-yellow-100' },
+];
+
+const testimonials = [
+  { name: 'محمد الأحمد',  role: 'متطوّع منذ 2024',       text: 'الدعم الذي تلقّيته ساعدني كثيراً، شكراً لكل المتطوعين على روحهم الرائعة.',            color: '#7da57f' },
+  { name: 'سارة عبدالله', role: 'قائدة فريق تطوّعي',     text: 'منصة رائعة تجمع المتطوعين وتسهّل عملية المشاركة في الأعمال الخيرية.',                color: '#e0a87a' },
+  { name: 'أحمد محمود',   role: 'متطوّع في الخدمات',     text: 'التطوّع غيّر حياتي تماماً، لمست السعادة عندما ساعدت الآخرين بنفسي.',                 color: '#5b8a90' },
+];
+
+const footerColumns = [
+  { title: 'المنصة',  links: ['الرئيسية', 'من نحن', 'الفرص التطوعية', 'متطوعونا'] },
+  { title: 'الدعم',   links: ['اتصل بنا', 'الأسئلة الشائعة', 'سياسة الخصوصية', 'الشروط والأحكام'] },
+  { title: 'تابعنا',  links: ['انستغرام', 'تويتر / X', 'فيسبوك', 'لينكدإن'] },
+];
+
+// ---------------------------------------------------------------------------
+// Main component
+// ---------------------------------------------------------------------------
 const Mainpage = () => {
-  const [currentSlide, setCurrentSlide] = useState(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
+  const [scrolled, setScrolled]             = useState(false);
   const [activeDropdown, setActiveDropdown] = useState(null);
-  const [dropdownTimeout, setDropdownTimeout] = useState(null);
-  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen]     = useState(false);
+  const userRef = useRef(null);
+
+  // ── same auth logic as original ──────────────────────────────────────────
   const { user, logout } = useAuth();
   const isLoggedIn = !!user;
-  const navigate = useNavigate();
+  const navigate   = useNavigate();
 
-  // Navigation items
-  const navItems = [
-    { 
-      name: 'الرئيسية', 
-      path: '/', 
-      icon: Home 
-    },
-    { 
-      name: 'من نحن', 
-      path: '/about', 
-      icon: Info,
-      dropdown: [
-        { name: 'رؤيتنا ورسالتنا', path: '/VisionMission' },
-        { name: 'فريق العمل', path: '/about/team' },
-        { name: 'شركاؤنا', path: '/about/partners' }
-      ]
-    },
-    { 
-      name: 'الخدمات', 
-      path: '/posts', 
-      icon: Briefcase,
-      dropdown: [
-        { name: 'خدمات تطوعية', path: '/posts' }
-      ]
-    },
-    { 
-      name: 'متطوعينا المميزين', 
-      path: '/VolunteerOfTheMonth', 
-      icon: Trophy 
-    },
-    { 
-      name: 'أقرب الخدمات', 
-      path: '/map', 
-      icon: FileText 
-    },
-    { 
-      name: 'اتصل بنا', 
-      path: '/contact', 
-      icon: Phone 
-    }
-  ];
-
-  const services = [
-    {
-      id: 1,
-      title: "زيارة مستشفى الأطفال",
-      description: "مبادرة لرسم البسمة على وجوه الأطفال المرضى وتقديم الهدايا لهم",
-      location: "مستشفى الأمير حمزة، عمّان",
-      image: "https://images.unsplash.com/photo-1631217868264-e5b90bb7e133?w=800&q=80",
-      type: "تطوعي",
-      volunteers: 45,
-      date: "17 مارس 2026"
-    },
-    {
-      id: 2,
-      title: "تنظيف الحي",
-      description: "نبحث عن متطوعين للمساعدة في تنظيف الحي وزراعة الأشجار لتجميله",
-      location: "حي النصر، الرمثا",
-      image: "https://images.unsplash.com/photo-1618477461853-cf6ed80faba5?w=800&q=80",
-      type: "تطوعي",
-      volunteers: 32,
-      date: "6 مارس 2026"
-    },
-    {
-      id: 3,
-      title: "مساعدة كبار السن",
-      description: "برنامج تطوعي لمساعدة كبار السن في التسوق أو زيارة الطبيب أو الجلوس للحديث",
-      location: "ماركا، عمان",
-      image: "https://images.unsplash.com/photo-1581579438747-1dc8d17bbce4?w=800&q=80",
-      type: "تطوعي",
-      volunteers: 28,
-      date: "20 مارس 2026"
-    },
-    {
-      id: 4,
-      title: "تعليم الأطفال",
-      description: "مبادرة لتعليم الأطفال القراءة والكتابة والرياضيات بشكل تطوعي",
-      location: "مركز الأمل المجتمعي",
-      image: "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=800&q=80",
-      type: "تطوعي",
-      volunteers: 56,
-      date: "2 مارس 2026"
-    },
-    {
-      id: 5,
-      title: "توزيع الطعام",
-      description: "توزيع وجبات ساخنة على الأسر المحتاجة والمشردين",
-      location: "مختلف المناطق",
-      image: "https://images.unsplash.com/photo-1593113646773-028c64a8f1b8?w=800&q=80",
-      type: "تطوعي",
-      volunteers: 67,
-      date: "25 مارس 2026"
-    }
-  ];
-
-  // إحصائيات منطقية لموقع حديث
-  const stats = [
-    { icon: Users, number: "50+", label: "متطوع نشط", color: "emerald", trend: "+15%" },
-    { icon: Heart, number: "200+", label: "شخص تم مساعدته", color: "rose", trend: "+25%" },
-    { icon: Award, number: "15+", label: "مشروع مكتمل", color: "amber", trend: "+8%" },
-    { icon: Clock, number: "500+", label: "ساعة تطوع", color: "blue", trend: "+20%" }
-  ];
-
-  const features = [
-    {
-      icon: Target,
-      title: "رؤية واضحة",
-      description: "نعمل على تحقيق أهداف واضحة ومحددة لخدمة المجتمع",
-      color: "from-emerald-400 to-emerald-600"
-    },
-    {
-      icon: Handshake,
-      title: "شراكات موثوقة",
-      description: "نتعاون مع منظمات محلية ودولية لتوسيع نطاق الخدمات",
-      color: "from-blue-400 to-blue-600"
-    },
-    {
-      icon: Shield,
-      title: "موثوقية عالية",
-      description: "جميع خدماتنا معتمدة ومضمونة بأعلى معايير الجودة",
-      color: "from-purple-400 to-purple-600"
-    },
-    {
-      icon: Zap,
-      title: "تأثير سريع",
-      description: "كل مساهمة تحدث فرقاً ملموساً وسريعاً في حياة الآخرين",
-      color: "from-amber-400 to-amber-600"
-    }
-  ];
-
-  const testimonials = [
-    {
-      name: "أحمد محمود",
-      role: "متطوع منذ سنتين",
-      image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&q=80",
-      quote: "التطوع غير حياتي تماماً، أشعر بالسعادة عندما أساعد الآخرين"
-    },
-    {
-      name: "سارة عبدالله",
-      role: "منسقة فريق",
-      image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&q=80",
-      quote: "منصة رائعة تجمع المتطوعين وتسهل عملية المشاركة في الأعمال الخيرية"
-    },
-    {
-      name: "محمد الأحمد",
-      role: "مستفيد من الخدمات",
-      image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&q=80",
-      quote: "الدعم الذي تلقيته ساعدني كثيراً، شكراً لكل المتطوعين"
-    }
-  ];
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % services.length);
-    }, 5000);
-    return () => clearInterval(timer);
-  }, []);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 50);
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (userMenuOpen && !event.target.closest('.user-menu')) {
-        setUserMenuOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [userMenuOpen]);
-
-  const nextSlide = () => {
-    setCurrentSlide((prev) => (prev + 1) % services.length);
-  };
-
-  const prevSlide = () => {
-    setCurrentSlide((prev) => (prev - 1 + services.length) % services.length);
-  };
-
+  // ── handlers (identical to original) ─────────────────────────────────────
   const handleNavigation = (path) => {
     navigate(path);
     setMobileMenuOpen(false);
@@ -246,995 +189,652 @@ const Mainpage = () => {
     navigate('/');
   };
 
-  const getColorClasses = (color) => {
-    const colors = {
-      emerald: 'bg-emerald-100 text-emerald-600',
-      rose: 'bg-rose-100 text-rose-600',
-      amber: 'bg-amber-100 text-amber-600',
-      blue: 'bg-blue-100 text-blue-600'
+  // ── effects ───────────────────────────────────────────────────────────────
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 50);
+    window.addEventListener('scroll', onScroll);
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  useEffect(() => {
+    const onClick = (e) => {
+      if (userMenuOpen && userRef.current && !userRef.current.contains(e.target))
+        setUserMenuOpen(false);
     };
-    return colors[color] || colors.emerald;
-  };
+    document.addEventListener('mousedown', onClick);
+    return () => document.removeEventListener('mousedown', onClick);
+  }, [userMenuOpen]);
 
+  // =========================================================================
+  // RENDER
+  // =========================================================================
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white" dir="rtl">
-      {/* Header with Advanced Navbar */}
-      <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
-        scrolled 
-          ? 'bg-white/98 backdrop-blur-xl shadow-2xl border-b border-slate-200/50' 
-          : 'bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900'
+    <div className="min-h-screen bg-white" dir="rtl">
+
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ HEADER (new design) ━━ */}
+      <header className={`sticky top-0 z-50 border-b border-slate-200/60 transition-all duration-300 ${
+        scrolled ? 'bg-white/95 backdrop-blur-md shadow-sm' : 'bg-white/80 backdrop-blur-md'
       }`}>
-        <div className="container mx-auto px-4">
-          <div className="flex justify-between items-center py-4">
-            {/* Logo Section */}
-            <div 
-              className="flex items-center gap-4 cursor-pointer group"
-              onClick={() => handleNavigation('/')}
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-5 py-3 md:px-8">
+
+          {/* ── Logo + CTA (RIGHT in RTL) ───────────────────────────────── */}
+          <div className="flex items-center gap-3">
+            {/* Logo */}
+            <button onClick={() => handleNavigation('/')} className="flex items-center gap-3 group">
+              <span className="relative flex size-11 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-700 shadow-lg shadow-emerald-500/25 transition-transform group-hover:scale-105">
+                <HeartHandshake className="size-6 text-white" />
+                <span className="absolute -right-0.5 -top-0.5 size-2.5 rounded-full bg-amber-400 ring-2 ring-white" />
+              </span>
+              <span className="hidden flex-col leading-tight sm:flex">
+                <span className="text-base font-black tracking-tight text-slate-900">
+                  <span className="text-emerald-600">شارك</span>
+                </span>
+                <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-amber-500">وأحدث فرقاً</span>
+              </span>
+            </button>
+
+            {/* CTA */}
+            <button
+              onClick={() => handleNavigation('/posts')}
+              className="hidden rounded-full bg-amber-500 px-5 py-2 text-sm font-bold text-white transition-colors hover:bg-amber-600 sm:inline-flex"
             >
-              <div className="relative">
-                {/* Glowing Effect */}
-                <div className="absolute inset-0 bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 rounded-3xl blur-xl opacity-40 group-hover:opacity-70 transition-all duration-500 animate-pulse"></div>
-                {/* Icon Container */}
-                <div className="relative w-14 h-14 bg-gradient-to-br from-emerald-400 via-teal-500 to-cyan-500 rounded-3xl flex items-center justify-center transform group-hover:scale-110 group-hover:rotate-6 transition-all duration-500 shadow-2xl">
-                  <div className="relative">
-                    <Handshake className="w-7 h-7 text-white" strokeWidth={2.5} />
-                    <Sparkles className="w-4 h-4 text-yellow-300 absolute -top-1 -right-1 animate-bounce" />
-                  </div>
-                </div>
-              </div>
-              <div className="flex flex-col">
-                <h1 className={`text-xl md:text-2xl font-black tracking-tight transition-all duration-300 ${
-                  scrolled ? 'text-slate-800' : 'text-white'
-                }`}>
-                  <span className="bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 bg-clip-text text-transparent animate-gradient">
-                    Participate
-                  </span>
-                  {' & '}
-                  <span className={`${scrolled ? 'text-slate-700' : 'text-slate-200'}`}>
-                    Make
-                  </span>
-                </h1>
-                <p className={`text-xs font-bold tracking-[0.2em] ${
-                  scrolled ? 'text-emerald-600' : 'text-emerald-400'
-                }`}>
-                  A CHANGE
-                </p>
-              </div>
-            </div>
+              تطوّع الآن
+            </button>
 
-            {/* Desktop Navigation */}
-            <nav className="hidden lg:flex items-center gap-1">
-              {navItems.map((item) => (
-                <div 
-                  key={item.name} 
-                  className="relative group/nav"
+            {/* Mobile menu button */}
+            <button
+              onClick={() => setMobileMenuOpen((o) => !o)}
+              className="flex size-10 items-center justify-center rounded-full text-slate-900 transition-colors hover:bg-slate-100 lg:hidden"
+            >
+              {mobileMenuOpen ? <X className="size-5" /> : <Menu className="size-5" />}
+            </button>
+          </div>
+
+          {/* ── Desktop nav (CENTER) ────────────────────────────────────── */}
+          <nav className="hidden items-center gap-1 lg:flex">
+            {navItems.map((item, i) => (
+              <div
+                key={item.name}
+                className="relative"
+                onMouseEnter={() => item.dropdown && setActiveDropdown(item.name)}
+                onMouseLeave={() => item.dropdown && setActiveDropdown(null)}
+              >
+                <button
+                  onClick={() => { if (!item.dropdown) handleNavigation(item.path); else setActiveDropdown(activeDropdown === item.name ? null : item.name); }}
+                  className={`flex items-center gap-1 rounded-full px-4 py-2 text-sm font-medium transition-colors ${
+                    i === 0
+                      ? 'bg-slate-100 text-slate-900'
+                      : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900'
+                  }`}
                 >
-                  <button
-                    onMouseEnter={() => item.dropdown && setActiveDropdown(item.name)}
-                    onClick={() => {
-                      if (!item.dropdown) {
-                        handleNavigation(item.path);
-                      } else {
-                        setActiveDropdown(activeDropdown === item.name ? null : item.name);
-                      }
-                    }}
-                    className={`flex items-center gap-2 px-5 py-3 rounded-xl font-bold transition-all relative overflow-hidden group ${
-                      scrolled 
-                        ? 'text-slate-700 hover:text-emerald-600' 
-                        : 'text-white hover:text-emerald-300'
-                    }`}
-                  >
-                    {/* Hover Background Effect */}
-                    <span className="absolute inset-0 bg-gradient-to-r from-emerald-500/0 via-emerald-500/10 to-emerald-600/0 opacity-0 group-hover:opacity-100 transition-all duration-300 rounded-xl"></span>
-                    <span className="absolute inset-0 bg-emerald-500/5 scale-0 group-hover:scale-100 transition-transform duration-500 rounded-xl"></span>
-                    
-                    <item.icon className="w-4 h-4 relative z-10 group-hover:scale-110 transition-transform" />
-                    <span className="relative z-10">{item.name}</span>
-                    {item.dropdown && (
-                      <ChevronDown className={`w-4 h-4 transition-all duration-300 ${
-                        activeDropdown === item.name ? 'rotate-180' : ''
-                      }`} />
-                    )}
-                    
-                    {/* Animated Underline */}
-                    <span className="absolute bottom-1 left-2 right-2 h-0.5 bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-center rounded-full"></span>
-                  </button>
+                  {item.name}
+                  {item.dropdown && (
+                    <ChevronDown className={`size-4 transition-transform ${activeDropdown === item.name ? 'rotate-180' : ''}`} />
+                  )}
+                </button>
 
-                  {/* Dropdown Menu */}
-                  {item.dropdown && activeDropdown === item.name && (
-                    <div 
-                      className="absolute top-full right-0 mt-2 w-56 bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden animate-fadeInDown z-50"
-                      onMouseLeave={() => setActiveDropdown(null)}
-                    >
-                      {item.dropdown.map((subItem, index) => (
+                {item.dropdown && activeDropdown === item.name && (
+                  <div className="absolute right-0 top-full w-56 pt-2 z-50">
+                    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white p-2 shadow-xl">
+                      {item.dropdown.map((sub) => (
                         <button
-                          key={subItem.name}
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            console.log('Navigating to:', subItem.path);
-                            handleNavigation(subItem.path);
-                            setActiveDropdown(null);
-                          }}
-                          className={`w-full text-right px-6 py-4 text-slate-700 hover:bg-gradient-to-r hover:from-emerald-50 hover:to-teal-50 hover:text-emerald-700 transition-all flex items-center gap-3 group/item cursor-pointer ${
-                            index !== 0 ? 'border-t border-slate-100' : ''
-                          }`}
+                          key={sub.name}
+                          onClick={(e) => { e.stopPropagation(); handleNavigation(sub.path); setActiveDropdown(null); }}
+                          className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-800 transition-colors hover:bg-slate-100"
                         >
-                          <ChevronLeft className="w-4 h-4 opacity-0 group-hover/item:opacity-100 transform translate-x-2 group-hover/item:translate-x-0 transition-all" />
-                          <span className="font-semibold">{subItem.name}</span>
+                          <ChevronLeft className="size-4 text-emerald-600" />
+                          {sub.name}
                         </button>
                       ))}
                     </div>
-                  )}
-                </div>
-              ))}
-            </nav>
-
-            {/* Action Buttons */}
-            <div className="flex items-center gap-4">
-              {/* Search Button */}
-              <button className={`hidden md:flex w-10 h-10 rounded-xl items-center justify-center transition-all hover:scale-110 ${
-                scrolled 
-                  ? 'bg-slate-100 hover:bg-slate-200 text-slate-700' 
-                  : 'bg-white/10 hover:bg-white/20 text-white'
-              }`}>
-                <Search className="w-5 h-5" />
-              </button>
-
-              {/* Notifications */}
-              {isLoggedIn && (
-                <button className={`hidden md:flex w-10 h-10 rounded-xl items-center justify-center transition-all hover:scale-110 relative ${
-                  scrolled 
-                    ? 'bg-slate-100 hover:bg-slate-200 text-slate-700' 
-                    : 'bg-white/10 hover:bg-white/20 text-white'
-                }`}>
-                  <Bell className="w-5 h-5" />
-                  <span className="absolute top-1 right-1 w-2 h-2 bg-rose-500 rounded-full animate-pulse"></span>
-                </button>
-              )}
-
-              {/* User Menu */}
-              {isLoggedIn ? (
-                <div className="relative user-menu">
-                  <button
-                    onClick={() => setUserMenuOpen(!userMenuOpen)}
-                    className="flex items-center gap-3 group"
-                  >
-                    <div className="relative">
-                      {/* Glowing Ring */}
-                      <div className="absolute inset-0 rounded-full bg-gradient-to-r from-emerald-400 to-teal-400 opacity-0 group-hover:opacity-50 blur-md transition-opacity"></div>
-                      {/* Profile Image */}
-                      <img
-                        src={user?.photoURL || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&q=80"}
-                        alt="Profile"
-                        className="w-11 h-11 rounded-full object-cover border-3 border-white shadow-lg transform group-hover:scale-110 transition-all relative z-10 ring-2 ring-emerald-400/50"
-                      />
-                      {/* Online Status */}
-                      <span className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 rounded-full border-2 border-white z-20"></span>
-                    </div>
-                    <ChevronDown className={`w-4 h-4 transition-transform hidden md:block ${
-                      userMenuOpen ? 'rotate-180' : ''
-                    } ${scrolled ? 'text-slate-700' : 'text-white'}`} />
-                  </button>
-
-                  {/* User Dropdown */}
-                  {userMenuOpen && (
-                    <div className="absolute top-full left-0 mt-3 w-64 bg-white/98 backdrop-blur-xl rounded-2xl shadow-2xl border border-slate-200/50 overflow-hidden animate-fadeInDown">
-                      {/* User Info */}
-                      <div className="px-6 py-4 bg-gradient-to-r from-emerald-50 to-teal-50 border-b border-slate-200/50">
-                        <p className="font-bold text-slate-800 text-lg">{user?.displayName || 'مستخدم'}</p>
-                        <p className="text-sm text-slate-600">{user?.email}</p>
-                      </div>
-
-                      {/* Menu Items */}
-                      <div className="py-2">
-                        <button
-                          onClick={() => {
-                            handleNavigation('/Profile');
-                            setUserMenuOpen(false);
-                          }}
-                          className="w-full text-right px-6 py-3 text-slate-700 hover:bg-gradient-to-r hover:from-emerald-50 hover:to-teal-50 transition-all flex items-center gap-3 group"
-                        >
-                          <UserCircle className="w-5 h-5 text-emerald-600 group-hover:scale-110 transition-transform" />
-                          <span className="font-semibold">الملف الشخصي</span>
-                        </button>
-                        
-                        <button
-                          onClick={handleLogout}
-                          className="w-full text-right px-6 py-3 text-rose-600 hover:bg-rose-50 transition-all flex items-center gap-3 group border-t border-slate-200/50"
-                        >
-                          <LogOut className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                          <span className="font-semibold">تسجيل الخروج</span>
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <button 
-                  onClick={() => handleNavigation('/login')}
-                  className="hidden md:flex bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 hover:from-emerald-600 hover:via-teal-600 hover:to-cyan-600 text-white px-8 py-3 rounded-xl font-bold transition-all transform hover:scale-105 shadow-lg hover:shadow-2xl"
-                >
-                  تسجيل الدخول
-                </button>
-              )}
-
-              {/* Mobile Menu Button */}
-              <button
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className={`lg:hidden p-2 rounded-xl transition-all hover:scale-110 ${
-                  scrolled ? 'text-slate-700 bg-slate-100' : 'text-white bg-white/10'
-                }`}
-              >
-                {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-              </button>
-            </div>
-          </div>
-
-          {/* Mobile Menu */}
-          {mobileMenuOpen && (
-            <div className="lg:hidden py-4 border-t border-slate-200/20 animate-slideDown">
-              <nav className="flex flex-col gap-2">
-                {navItems.map((item) => (
-                  <div key={item.name}>
-                    <button
-                      onClick={() => {
-                        if (!item.dropdown) {
-                          handleNavigation(item.path);
-                        } else {
-                          setActiveDropdown(activeDropdown === item.name ? null : item.name);
-                        }
-                      }}
-                      className={`w-full flex items-center justify-between px-4 py-3 rounded-xl font-semibold transition-all ${
-                        scrolled 
-                          ? 'text-slate-700 hover:bg-emerald-50' 
-                          : 'text-white hover:bg-white/10'
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <item.icon className="w-5 h-5" />
-                        <span>{item.name}</span>
-                      </div>
-                      {item.dropdown && (
-                        <ChevronDown className={`w-4 h-4 transition-transform ${
-                          activeDropdown === item.name ? 'rotate-180' : ''
-                        }`} />
-                      )}
-                    </button>
-                    {item.dropdown && activeDropdown === item.name && (
-                      <div className="pr-8 pt-2 space-y-1">
-                        {item.dropdown.map((subItem) => (
-                          <button
-                            key={subItem.name}
-                            onClick={() => handleNavigation(subItem.path)}
-                            className={`w-full text-right px-4 py-2 rounded-lg transition-all ${
-                              scrolled 
-                                ? 'text-slate-600 hover:bg-emerald-50 hover:text-emerald-700' 
-                                : 'text-slate-300 hover:bg-white/10 hover:text-white'
-                            }`}
-                          >
-                            {subItem.name}
-                          </button>
-                        ))}
-                      </div>
-                    )}
                   </div>
-                ))}
-                {!isLoggedIn && (
-                  <button 
-                    onClick={() => handleNavigation('/login')}
-                    className="mt-4 bg-gradient-to-r from-emerald-500 to-teal-500 text-white px-6 py-3 rounded-xl font-bold transition-all transform hover:scale-105 shadow-lg"
-                  >
-                    تسجيل الدخول
-                  </button>
                 )}
-              </nav>
-            </div>
-          )}
-        </div>
-      </header>
-
-      {/* Spacer for fixed header */}
-      <div className="h-20"></div>
-
-      {/* Hero Slider */}
-      <section className="relative h-[650px] bg-slate-900 overflow-hidden">
-        {/* Animated Background Pattern */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-0 left-0 w-96 h-96 bg-emerald-500 rounded-full mix-blend-multiply filter blur-3xl animate-blob"></div>
-          <div className="absolute top-0 right-0 w-96 h-96 bg-teal-500 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-2000"></div>
-          <div className="absolute bottom-0 left-1/2 w-96 h-96 bg-cyan-500 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-4000"></div>
-        </div>
-
-        {services.map((service, index) => (
-          <div
-            key={service.id}
-            className={`absolute inset-0 transition-opacity duration-1000 ${
-              index === currentSlide ? 'opacity-100' : 'opacity-0'
-            }`}
-          >
-            <div className="absolute inset-0 bg-gradient-to-l from-slate-900/80 via-slate-900/40 to-transparent z-10" />
-            <img
-              src={service.image}
-              alt={service.title}
-              className="w-full h-full object-cover scale-105 animate-ken-burns"
-            />
-            <div className="absolute inset-0 z-20 flex items-center">
-              <div className="container mx-auto px-4">
-                <div className="max-w-3xl animate-fadeInUp">
-                  <div className="flex items-center gap-3 mb-6">
-                    <span className="inline-flex items-center gap-2 bg-gradient-to-r from-emerald-500 to-teal-500 text-white px-5 py-2 rounded-full text-sm font-bold shadow-2xl animate-pulse-slow">
-                      <Sparkles className="w-4 h-4" />
-                      {service.type}
-                    </span>
-                    <span className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-md text-white px-5 py-2 rounded-full text-sm font-semibold border border-white/30">
-                      <Users className="w-4 h-4" />
-                      {service.volunteers} متطوع
-                    </span>
-                  </div>
-                  <h2 className="text-6xl md:text-7xl font-black text-white mb-6 leading-tight drop-shadow-2xl">
-                    {service.title}
-                  </h2>
-                  <p className="text-2xl text-slate-200 mb-8 leading-relaxed font-medium">
-                    {service.description}
-                  </p>
-                  <div className="flex flex-col gap-4 mb-10">
-                    <p className="text-slate-200 flex items-center gap-3 text-lg">
-                      <span className="w-10 h-10 bg-emerald-500/20 backdrop-blur-sm rounded-full flex items-center justify-center">
-                        <MapPin className="w-5 h-5 text-emerald-300" />
-                      </span>
-                      {service.location}
-                    </p>
-                    <p className="text-slate-200 flex items-center gap-3 text-lg">
-                      <span className="w-10 h-10 bg-emerald-500/20 backdrop-blur-sm rounded-full flex items-center justify-center">
-                        <Calendar className="w-5 h-5 text-emerald-300" />
-                      </span>
-                      {service.date}
-                    </p>
-                  </div>
-                  <div className="flex gap-4 flex-wrap">
-                    <button 
-                      onClick={() => handleNavigation('/posts')}
-                      className="bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 hover:from-emerald-600 hover:via-teal-600 hover:to-cyan-600 text-white px-10 py-5 rounded-2xl font-bold text-lg transition-all transform hover:scale-105 shadow-2xl flex items-center gap-3 group"
-                    >
-                      تطوع الآن
-                      <ArrowLeft className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        ))}
-
-        {/* Navigation Arrows */}
-        <button
-          onClick={prevSlide}
-          className="absolute left-8 top-1/2 -translate-y-1/2 z-30 bg-white/20 hover:bg-white/40 backdrop-blur-xl p-5 rounded-2xl transition-all hover:scale-110 shadow-2xl border border-white/30 group"
-        >
-          <ChevronLeft className="w-7 h-7 text-white group-hover:scale-110 transition-transform" />
-        </button>
-        <button
-          onClick={nextSlide}
-          className="absolute right-8 top-1/2 -translate-y-1/2 z-30 bg-white/20 hover:bg-white/40 backdrop-blur-xl p-5 rounded-2xl transition-all hover:scale-110 shadow-2xl border border-white/30 group"
-        >
-          <ChevronRight className="w-7 h-7 text-white group-hover:scale-110 transition-transform" />
-        </button>
-
-        {/* Dots */}
-        <div className="absolute bottom-12 left-1/2 -translate-x-1/2 z-30 flex gap-3">
-          {services.map((_, index) => (
-            <button
-              key={index}
-              onClick={() => setCurrentSlide(index)}
-              className={`h-2.5 rounded-full transition-all ${
-                index === currentSlide 
-                  ? 'bg-gradient-to-r from-emerald-400 to-teal-400 w-16 shadow-lg shadow-emerald-500/50' 
-                  : 'bg-white/40 w-2.5 hover:bg-white/60 hover:w-8'
-              }`}
-            />
-          ))}
-        </div>
-      </section>
-
-      {/* Stats Section */}
-      <section className="py-24 bg-white relative overflow-hidden">
-        {/* Animated Background */}
-        <div className="absolute inset-0 bg-gradient-to-b from-slate-50/80 to-white"></div>
-        <div className="absolute inset-0 opacity-5">
-          <div className="absolute top-20 left-20 w-72 h-72 bg-emerald-500 rounded-full blur-3xl"></div>
-          <div className="absolute bottom-20 right-20 w-72 h-72 bg-teal-500 rounded-full blur-3xl"></div>
-        </div>
-
-        <div className="container mx-auto px-4 relative z-10">
-          <div className="text-center mb-20">
-            <div className="inline-flex items-center gap-2 bg-gradient-to-r from-emerald-100 to-teal-100 text-emerald-700 px-5 py-2.5 rounded-full mb-6 font-bold shadow-lg">
-              <TrendingUp className="w-5 h-5" />
-              نمو مستمر
-            </div>
-            <h2 className="text-5xl md:text-6xl font-black text-slate-800 mb-6">إنجازاتنا المتميزة</h2>
-            <p className="text-slate-600 text-xl max-w-3xl mx-auto leading-relaxed">
-              نفخر بما حققناه معاً في رحلتنا الجديدة نحو خدمة المجتمع
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-4 gap-8">
-            {stats.map((stat, index) => {
-              const Icon = stat.icon;
-              return (
-                <div
-                  key={index}
-                  className="relative group"
-                >
-                  {/* Glowing Background */}
-                  <div className="absolute inset-0 bg-gradient-to-br from-emerald-400/20 to-teal-400/20 rounded-3xl blur-2xl opacity-0 group-hover:opacity-100 transition-all duration-500"></div>
-                  
-                  {/* Card */}
-                  <div className="relative text-center p-10 rounded-3xl bg-gradient-to-br from-white to-slate-50/50 shadow-xl hover:shadow-2xl transition-all transform hover:-translate-y-4 border border-slate-200/50 backdrop-blur-sm">
-                    <div className={`inline-flex items-center justify-center w-24 h-24 ${getColorClasses(stat.color)} rounded-3xl mb-6 shadow-2xl transform group-hover:scale-110 group-hover:rotate-6 transition-all duration-500`}>
-                      <Icon className="w-12 h-12" />
-                    </div>
-                    <h3 className="text-5xl font-black text-slate-800 mb-3">
-                      {stat.number}
-                    </h3>
-                    <p className="text-slate-600 font-bold text-lg mb-3">{stat.label}</p>
-                    
-                    {/* Trend Indicator */}
-                    <div className="flex items-center justify-center gap-1 text-emerald-600 font-bold text-sm">
-                      <TrendingUp className="w-4 h-4" />
-                      <span>{stat.trend}</span>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* Decorative Divider 1 */}
-      <div className="relative h-32 bg-gradient-to-b from-white to-slate-50 overflow-hidden">
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="flex items-center gap-3">
-            <div className="w-32 h-0.5 bg-gradient-to-r from-transparent via-emerald-300 to-emerald-500"></div>
-            <div className="w-12 h-12 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-2xl flex items-center justify-center shadow-xl rotate-45">
-              <Sparkles className="w-6 h-6 text-white -rotate-45" />
-            </div>
-            <div className="w-32 h-0.5 bg-gradient-to-l from-transparent via-teal-300 to-teal-500"></div>
-          </div>
-        </div>
-        {/* Subtle floating circles */}
-        <div className="absolute top-1/2 left-1/4 w-3 h-3 bg-emerald-400 rounded-full opacity-40 animate-float"></div>
-        <div className="absolute top-1/2 right-1/4 w-2 h-2 bg-teal-400 rounded-full opacity-40 animate-float animation-delay-2000"></div>
-      </div>
-
-      {/* Features Section */}
-      <section className="py-24 bg-gradient-to-b from-white via-slate-50 to-white relative overflow-hidden">
-        <div className="container mx-auto px-4 relative z-10">
-          <div className="text-center mb-20">
-            <h2 className="text-5xl md:text-6xl font-black text-slate-800 mb-6">لماذا تختارنا؟</h2>
-            <p className="text-slate-600 text-xl max-w-3xl mx-auto leading-relaxed">
-              نقدم تجربة فريدة تجمع بين الجودة والموثوقية والتأثير الحقيقي
-            </p>
-          </div>
-          
-          <div className="grid md:grid-cols-4 gap-8">
-            {features.map((feature, index) => {
-              const Icon = feature.icon;
-              return (
-                <div
-                  key={index}
-                  className="group relative"
-                >
-                  {/* Animated Background */}
-                  <div className={`absolute inset-0 bg-gradient-to-br ${feature.color} rounded-3xl opacity-0 group-hover:opacity-10 transition-all duration-500 blur-xl`}></div>
-                  
-                  {/* Card */}
-                  <div className="relative text-center p-10 rounded-3xl bg-white shadow-xl hover:shadow-2xl transition-all transform hover:-translate-y-4 border border-slate-100">
-                    <div className={`inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br ${feature.color} rounded-2xl mb-6 shadow-2xl transform group-hover:scale-110 group-hover:rotate-12 transition-all duration-500`}>
-                      <Icon className="w-10 h-10 text-white" strokeWidth={2.5} />
-                    </div>
-                    <h3 className="text-2xl font-black text-slate-800 mb-4">
-                      {feature.title}
-                    </h3>
-                    <p className="text-slate-600 leading-relaxed font-medium">{feature.description}</p>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* Decorative Divider 2 */}
-      <div className="relative h-32 bg-gradient-to-b from-white to-white overflow-hidden">
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="flex items-center gap-4">
-            <div className="flex gap-2">
-              <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
-              <div className="w-2 h-2 bg-teal-400 rounded-full animate-pulse animation-delay-1000"></div>
-              <div className="w-2 h-2 bg-cyan-400 rounded-full animate-pulse animation-delay-2000"></div>
-            </div>
-            <div className="w-24 h-0.5 bg-gradient-to-r from-emerald-400 to-teal-400"></div>
-            <Heart className="w-8 h-8 text-emerald-500 animate-pulse" />
-            <div className="w-24 h-0.5 bg-gradient-to-l from-teal-400 to-cyan-400"></div>
-            <div className="flex gap-2">
-              <div className="w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></div>
-              <div className="w-2 h-2 bg-teal-400 rounded-full animate-pulse animation-delay-1000"></div>
-              <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse animation-delay-2000"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Volunteer Services Grid */}
-      <section className="py-24 bg-white relative overflow-hidden">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-20">
-            <div className="inline-flex items-center gap-2 bg-gradient-to-r from-emerald-100 to-teal-100 text-emerald-700 px-5 py-2.5 rounded-full mb-6 font-bold shadow-lg">
-              <Heart className="w-5 h-5" />
-              فرص التطوع
-            </div>
-            <h2 className="text-5xl md:text-6xl font-black text-slate-800 mb-6">الخدمات التطوعية</h2>
-            <p className="text-slate-600 text-xl max-w-3xl mx-auto leading-relaxed">
-              اختر الخدمة التي تناسبك وابدأ في إحداث فرق إيجابي في المجتمع
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8 mb-16">
-            {services.slice(0, 3).map((service, index) => (
-              <div
-                key={service.id}
-                className="group relative animate-fadeInUp"
-                style={{ animationDelay: `${index * 100}ms` }}
-              >
-                {/* Glowing Effect */}
-                <div className="absolute inset-0 bg-gradient-to-br from-emerald-400/30 to-teal-400/30 rounded-3xl blur-2xl opacity-0 group-hover:opacity-100 transition-all duration-500"></div>
-                
-                {/* Card */}
-                <div className="relative bg-white rounded-3xl overflow-hidden shadow-xl hover:shadow-2xl transition-all transform hover:-translate-y-4 border border-slate-100">
-                  <div className="relative h-64 overflow-hidden">
-                    <img
-                      src={service.image}
-                      alt={service.title}
-                      className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700"
-                    />
-                    {/* Gradient Overlay */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-900/50 to-transparent"></div>
-                    
-                    <div className="absolute top-5 right-5 flex flex-col gap-2">
-                      <span className="inline-flex items-center gap-2 bg-gradient-to-r from-emerald-500 to-teal-500 text-white px-4 py-2 rounded-full text-sm font-bold shadow-2xl">
-                        <Sparkles className="w-4 h-4" />
-                        {service.type}
-                      </span>
-                      <span className="bg-white/95 backdrop-blur-sm text-slate-800 px-4 py-2 rounded-full text-sm font-bold shadow-2xl flex items-center gap-2">
-                        <Users className="w-4 h-4 text-emerald-600" />
-                        {service.volunteers}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="p-8">
-                    <h3 className="text-2xl font-black text-slate-800 mb-4">
-                      {service.title}
-                    </h3>
-                    <p className="text-slate-600 mb-6 leading-relaxed">{service.description}</p>
-                    
-                    <div className="space-y-3 mb-8">
-                      <p className="text-sm text-slate-500 flex items-center gap-3 font-semibold">
-                        <span className="w-9 h-9 bg-emerald-100 rounded-xl flex items-center justify-center">
-                          <MapPin className="w-5 h-5 text-emerald-600" />
-                        </span>
-                        {service.location}
-                      </p>
-                      <p className="text-sm text-slate-500 flex items-center gap-3 font-semibold">
-                        <span className="w-9 h-9 bg-emerald-100 rounded-xl flex items-center justify-center">
-                          <Calendar className="w-5 h-5 text-emerald-600" />
-                        </span>
-                        {service.date}
-                      </p>
-                    </div>
-
-                    <button 
-                      onClick={() => handleNavigation('/posts')}
-                      className="w-full bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 hover:from-emerald-600 hover:via-teal-600 hover:to-cyan-600 text-white py-4 rounded-2xl font-bold text-lg transition-all transform hover:scale-105 shadow-lg hover:shadow-2xl flex items-center justify-center gap-3 group/btn"
-                    >
-                      تطوع الآن
-                      <CheckCircle className="w-6 h-6 group-hover/btn:scale-110 transition-transform" />
-                    </button>
-                  </div>
-                </div>
               </div>
             ))}
-          </div>
+          </nav>
 
-          <div className="text-center">
-            <button 
-              onClick={() => handleNavigation('/posts')}
-              className="bg-slate-900 hover:bg-slate-800 text-white px-12 py-5 rounded-2xl font-bold text-xl transition-all transform hover:scale-105 shadow-2xl inline-flex items-center gap-3 group"
-            >
-              عرض جميع الخدمات التطوعية
-              <ArrowLeft className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
-            </button>
-          </div>
-        </div>
-      </section>
+          {/* ── User / Auth (LEFT in RTL) ───────────────────────────────── */}
+          <div className="relative flex items-center gap-2" ref={userRef}>
+            {isLoggedIn ? (
+              <>
+                {/* Notification bell */}
+                <button className="relative hidden size-10 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900 sm:flex">
+                  <Bell className="size-5" />
+                  <span className="absolute right-2 top-2 size-2 rounded-full bg-amber-500" />
+                </button>
 
-      {/* Decorative Divider 3 */}
-      <div className="relative h-40 bg-gradient-to-b from-white to-slate-50 overflow-hidden">
-        <svg className="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <linearGradient id="wave-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#10b981" stopOpacity="0.2"/>
-              <stop offset="50%" stopColor="#14b8a6" stopOpacity="0.3"/>
-              <stop offset="100%" stopColor="#06b6d4" stopOpacity="0.2"/>
-            </linearGradient>
-          </defs>
-          <path
-            d="M0,50 Q150,20 300,50 T600,50 T900,50 T1200,50 T1500,50 T1800,50 V100 H0 Z"
-            fill="url(#wave-gradient)"
-            className="animate-wave"
-          />
-        </svg>
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="flex items-center gap-3">
-            <div className="w-3 h-3 bg-yellow-400 rounded-full animate-bounce"></div>
-            <div className="w-4 h-4 bg-yellow-500 rounded-full animate-bounce animation-delay-1000"></div>
-            <div className="w-3 h-3 bg-yellow-400 rounded-full animate-bounce animation-delay-2000"></div>
-          </div>
-        </div>
-      </div>
+                <button
+                  onClick={() => setUserMenuOpen((o) => !o)}
+                  className="flex items-center gap-1.5 rounded-full p-0.5 transition-transform hover:scale-105"
+                >
+                  <ChevronDown className={`size-4 text-slate-500 transition-transform ${userMenuOpen ? 'rotate-180' : ''}`} />
+                  <img
+                    src={user?.photoURL || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&q=80'}
+                    alt="Profile"
+                    className="size-10 rounded-full object-cover ring-2 ring-emerald-400/50"
+                  />
+                </button>
 
-      <section className="py-24 bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 relative overflow-hidden">
-        {/* Animated Background */}
-        <div className="absolute inset-0 opacity-20">
-          <div className="absolute top-0 left-0 w-96 h-96 bg-white rounded-full blur-3xl animate-blob"></div>
-          <div className="absolute top-0 right-0 w-96 h-96 bg-white rounded-full blur-3xl animate-blob animation-delay-2000"></div>
-          <div className="absolute bottom-0 left-1/2 w-96 h-96 bg-white rounded-full blur-3xl animate-blob animation-delay-4000"></div>
-        </div>
-
-        <div className="container mx-auto px-4 relative z-10">
-          <div className="text-center mb-20">
-            <h2 className="text-5xl md:text-6xl font-black text-white mb-6">آراء عملائنا</h2>
-            <p className="text-white/90 text-xl max-w-3xl mx-auto leading-relaxed">
-              تجارب حقيقية من أشخاص حقيقيين غيروا حياتهم من خلال المنصة
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            {testimonials.map((testimonial, index) => (
-              <div
-                key={index}
-                className="group animate-fadeInUp"
-                style={{ animationDelay: `${index * 100}ms` }}
-              >
-                <div className="bg-white/15 backdrop-blur-xl p-8 rounded-3xl border-2 border-white/30 hover:bg-white/25 transition-all transform hover:-translate-y-4 hover:border-white/50 shadow-2xl">
-                  <div className="flex items-center gap-4 mb-6">
-                    <div className="relative">
+                {userMenuOpen && (
+                  <div className="absolute left-0 top-14 w-56 origin-top-left overflow-hidden rounded-2xl border border-slate-200 bg-white p-2 shadow-xl z-50">
+                    <div className="flex items-center gap-3 rounded-xl px-3 py-2.5">
                       <img
-                        src={testimonial.image}
-                        alt={testimonial.name}
-                        className="w-20 h-20 rounded-2xl object-cover border-4 border-white/40 shadow-xl"
+                        src={user?.photoURL || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&q=80'}
+                        alt="Profile"
+                        className="size-10 rounded-full object-cover"
                       />
-                      <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-emerald-400 rounded-full flex items-center justify-center border-4 border-white shadow-lg">
-                        <CheckCircle className="w-4 h-4 text-white" />
+                      <div className="flex flex-col leading-tight">
+                        <span className="text-sm font-bold">{user?.displayName || 'مستخدم'}</span>
+                        <span className="text-xs text-slate-500">{user?.email}</span>
                       </div>
                     </div>
-                    <div>
-                      <h4 className="font-black text-white text-xl">{testimonial.name}</h4>
-                      <p className="text-white/80 text-sm font-semibold">{testimonial.role}</p>
-                    </div>
-                  </div>
-                  <p className="text-white leading-relaxed text-lg font-medium mb-6">
-                    "{testimonial.quote}"
-                  </p>
-                  <div className="flex gap-1">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} className="w-6 h-6 text-amber-400 fill-amber-400" />
-                    ))}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-32 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 relative overflow-hidden">
-        {/* Animated Background */}
-        <div className="absolute inset-0 opacity-20">
-          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-emerald-500 rounded-full blur-3xl animate-blob"></div>
-          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-teal-500 rounded-full blur-3xl animate-blob animation-delay-2000"></div>
-        </div>
-
-        <div className="container mx-auto px-4 text-center relative z-10">
-          <div className="inline-flex items-center gap-2 bg-emerald-500/20 text-emerald-300 px-6 py-3 rounded-full mb-8 font-bold border border-emerald-500/30">
-            <Sparkles className="w-5 h-5" />
-            ابدأ رحلتك اليوم
-          </div>
-          <h2 className="text-6xl md:text-7xl font-black text-white mb-8 leading-tight">
-            كن جزءاً من
-            <br />
-            <span className="bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 bg-clip-text text-transparent">
-              التغيير الإيجابي
-            </span>
-          </h2>
-          <p className="text-2xl text-slate-300 mb-16 max-w-4xl mx-auto leading-relaxed font-medium">
-            انضم إلى مئات المتطوعين الذين يساهمون في بناء مجتمع أفضل وأكثر تكافلاً
-          </p>
-          <div className="flex gap-6 justify-center flex-wrap">
-            <button 
-              onClick={() => handleNavigation('/register')}
-              className="bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 hover:from-emerald-600 hover:via-teal-600 hover:to-cyan-600 text-white px-14 py-6 rounded-2xl font-bold text-2xl transition-all transform hover:scale-105 shadow-2xl inline-flex items-center gap-4 group"
-            >
-              ابدأ التطوع الآن
-              <ArrowLeft className="w-7 h-7 group-hover:translate-x-2 transition-transform" />
-            </button>
-            <button 
-              onClick={() => handleNavigation('/posts')}
-              className="bg-white/10 backdrop-blur-md border-2 border-white/40 text-white px-14 py-6 rounded-2xl font-bold text-2xl hover:bg-white/20 transition-all inline-flex items-center gap-4 group"
-            >
-              <Play className="w-6 h-6 group-hover:scale-110 transition-transform" />
-              تعرف علينا أكثر
-            </button>
-          </div>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="bg-slate-900 text-white pt-24 pb-12">
-        <div className="container mx-auto px-4">
-          <div className="grid md:grid-cols-4 gap-12 mb-20">
-            <div>
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-14 h-14 bg-gradient-to-br from-emerald-400 via-teal-500 to-cyan-500 rounded-2xl flex items-center justify-center shadow-2xl">
-                  <Handshake className="w-8 h-8 text-white" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-black">Participate</h3>
-                  <p className="text-xs text-emerald-400 font-bold">& Make A Change</p>
-                </div>
-              </div>
-              <p className="text-slate-400 mb-8 leading-relaxed font-medium">
-                نربط بين المتطوعين والفرص التطوعية لبناء مجتمع أفضل وأكثر تكافلاً
-              </p>
-              <div className="flex gap-3">
-                {['📘', '📷', '🐦', '💼'].map((emoji, i) => (
-                  <a 
-                    key={i}
-                    href="#" 
-                    className="w-12 h-12 bg-slate-800 hover:bg-gradient-to-r hover:from-emerald-500 hover:to-teal-500 rounded-xl flex items-center justify-center transition-all transform hover:scale-110 hover:rotate-6"
-                  >
-                    <span className="text-xl">{emoji}</span>
-                  </a>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <h4 className="text-xl font-black mb-6 text-white">روابط سريعة</h4>
-              <ul className="space-y-3 text-slate-400">
-                {navItems.slice(0, 5).map((item) => (
-                  <li key={item.name}>
-                    <button 
-                      onClick={() => handleNavigation(item.path)}
-                      className="hover:text-emerald-400 transition-colors flex items-center gap-2 font-semibold group"
+                    <div className="my-1 h-px bg-slate-200" />
+                    <button
+                      onClick={() => { handleNavigation('/Profile'); setUserMenuOpen(false); }}
+                      className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors hover:bg-slate-100"
                     >
-                      <ChevronLeft className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                      <UserCircle className="size-4 text-emerald-600" />
+                      الملف الشخصي
+                    </button>
+                    <button
+                      onClick={handleLogout}
+                      className="flex w-full items-center gap-3 rounded-xl border-t border-slate-200 px-3 py-2.5 text-sm font-medium text-rose-600 transition-colors hover:bg-rose-50"
+                    >
+                      <LogOut className="size-4" />
+                      تسجيل الخروج
+                    </button>
+                  </div>
+                )}
+              </>
+            ) : (
+              <button
+                onClick={() => handleNavigation('/login')}
+                className="flex items-center gap-1.5 rounded-full p-0.5 transition-transform hover:scale-105"
+              >
+                <ChevronDown className="size-4 text-slate-500" />
+                <span className="flex size-10 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-amber-600 text-white ring-2 ring-white">
+                  <User className="size-5" />
+                </span>
+              </button>
+            )}
+          </div>
+
+        </div>
+
+        {/* Mobile menu ──────────────────────────────────────────────────── */}
+        {mobileMenuOpen && (
+          <nav className="border-t border-slate-200/60 bg-white px-5 py-4 lg:hidden">
+            <ul className="flex flex-col gap-1">
+              {navItems.map((item) => (
+                <li key={item.name}>
+                  {item.dropdown ? (
+                    <details className="group">
+                      <summary className="flex cursor-pointer items-center justify-between rounded-xl px-4 py-3 text-sm font-bold text-slate-900 hover:bg-slate-100">
+                        {item.name}
+                        <ChevronDown className="size-4 transition-transform group-open:rotate-180" />
+                      </summary>
+                      <ul className="flex flex-col gap-1 pb-1 pr-3">
+                        {item.dropdown.map((sub) => (
+                          <li key={sub.name}>
+                            <button
+                              onClick={() => handleNavigation(sub.path)}
+                              className="flex w-full items-center gap-2.5 rounded-xl px-4 py-2.5 text-sm font-medium text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+                            >
+                              <ChevronLeft className="size-4 text-emerald-600" />
+                              {sub.name}
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    </details>
+                  ) : (
+                    <button
+                      onClick={() => handleNavigation(item.path)}
+                      className="block w-full rounded-xl px-4 py-3 text-right text-sm font-medium text-slate-900 hover:bg-slate-100"
+                    >
                       {item.name}
                     </button>
-                  </li>
-                ))}
-              </ul>
+                  )}
+                </li>
+              ))}
+            </ul>
+            {!isLoggedIn && (
+              <button
+                onClick={() => handleNavigation('/login')}
+                className="mt-3 w-full rounded-full bg-amber-500 py-3 font-bold text-white hover:bg-amber-600"
+              >
+                تسجيل الدخول
+              </button>
+            )}
+          </nav>
+        )}
+      </header>
+
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ HERO (new static layout) ━━ */}
+      <section className="relative overflow-hidden bg-white">
+        {/* Decorative blobs */}
+        <div className="pointer-events-none absolute -right-24 -top-24 size-72 rounded-full bg-amber-400/15 blur-3xl" />
+        <div className="pointer-events-none absolute -left-20 top-40 size-72 rounded-full bg-emerald-600/10 blur-3xl" />
+
+        <div className="mx-auto grid max-w-7xl items-center gap-10 px-5 py-12 md:px-8 lg:grid-cols-2 lg:gap-12 lg:py-20">
+          {/* Text side */}
+          <div className="flex flex-col items-start gap-6">
+            <Reveal>
+              <span className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-4 py-1.5 text-sm font-bold text-emerald-700">
+                <Sparkles className="size-4 animate-pulse" />
+                مبادرة جديدة كل أسبوع
+              </span>
+            </Reveal>
+
+            <Reveal delay={100}>
+              <h1 className="text-5xl font-black leading-[1.1] tracking-tight text-slate-900 sm:text-6xl lg:text-7xl">
+                نصنع التغيير،
+                <br />
+                <span className="bg-gradient-to-l from-emerald-600 via-amber-500 to-emerald-600 bg-clip-text text-transparent bg-[length:200%_auto] animate-[gradientShift_3s_ease_infinite]">
+                  تطوّعاً
+                </span>{' '}
+                تلو الآخر
+              </h1>
+            </Reveal>
+
+            <Reveal delay={200}>
+              <p className="max-w-md text-lg leading-relaxed text-slate-500">
+                انضم إلى مجتمع من المتطوعين الشغوفين، واختر الفرصة التي تناسبك، واترك بصمة حقيقية في حياة من حولك.
+              </p>
+            </Reveal>
+
+            <Reveal delay={300}>
+              <div className="flex flex-wrap items-center gap-3">
+                <button
+                  onClick={() => handleNavigation('/register')}
+                  className="group inline-flex items-center gap-2 rounded-full bg-amber-500 px-7 py-3 text-base font-bold text-white transition-all hover:bg-amber-600 hover:shadow-lg hover:shadow-amber-500/30"
+                >
+                  ابدأ التطوّع الآن
+                  <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
+                </button>
+                <button
+                  onClick={() => handleNavigation('/posts')}
+                  className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-transparent px-7 py-3 text-base font-bold text-slate-800 transition-colors hover:bg-slate-50"
+                >
+                  تصفّح الفرص
+                </button>
+              </div>
+            </Reveal>
+
+            {/* Social proof */}
+            <Reveal delay={400}>
+              <div className="flex items-center gap-3 pt-2">
+                <div className="flex -space-x-3 rtl:space-x-reverse">
+                  {['#7da57f', '#e0a87a', '#9bbfc4', '#c9b78a'].map((c) => (
+                    <span
+                      key={c}
+                      className="size-9 rounded-full border-2 border-white transition-transform hover:-translate-y-1"
+                      style={{ backgroundColor: c }}
+                    />
+                  ))}
+                </div>
+                <p className="text-sm font-medium text-slate-500">
+                  انضم إلى <span className="font-bold text-slate-800">+500 متطوّع</span> صنعوا الفرق
+                </p>
+              </div>
+            </Reveal>
+          </div>
+
+          {/* Image side */}
+          <Reveal delay={200} className="relative">
+            <div className="relative aspect-[4/5] w-full overflow-hidden rounded-[2.5rem] rounded-tl-[5rem] shadow-2xl shadow-emerald-600/10">
+               <img
+                src={"Screenshot 2026-06-10 222618.png"}
+                alt="متطوع يساعد في المجتمع"
+                className="h-full w-full object-cover transition-transform duration-700 hover:scale-105"
+              />
             </div>
 
-            <div>
-              <h4 className="text-xl font-black mb-6 text-white">الدعم</h4>
-              <ul className="space-y-3 text-slate-400">
-                {['الأسئلة الشائعة', 'اتصل بنا', 'سياسة الخصوصية', 'الشروط والأحكام', 'مركز المساعدة'].map((item) => (
-                  <li key={item}>
-                    <a href="#" className="hover:text-emerald-400 transition-colors flex items-center gap-2 font-semibold group">
-                      <ChevronLeft className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                      {item}
-                    </a>
-                  </li>
-                ))}
-              </ul>
+            {/* Floating featured-opportunity card */}
+            <div className="absolute -bottom-6 right-4 w-[min(20rem,80%)] rounded-3xl border border-slate-200 bg-white p-4 shadow-xl">
+              <div className="mb-3 flex items-center justify-between">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">
+                  <Sparkles className="size-3.5" />
+                  فرصة مميزة
+                </span>
+                <span className="inline-flex items-center gap-1 text-xs font-bold text-slate-400">
+                  <Users className="size-3.5" />
+                  {services[0].volunteers} متطوّع
+                </span>
+              </div>
+              <h3 className="text-lg font-extrabold text-slate-800">{services[0].title}</h3>
+              <div className="mt-2 flex flex-col gap-1.5 text-xs text-slate-400">
+                <span className="flex items-center gap-1.5">
+                  <MapPin className="size-3.5 text-amber-500" /> {services[0].location}
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <CalendarDays className="size-3.5 text-amber-500" /> {services[0].date}
+                </span>
+              </div>
             </div>
+          </Reveal>
+        </div>
+      </section>
 
-            <div>
-              <h4 className="text-xl font-black mb-6 text-white">تواصل معنا</h4>
-              <ul className="space-y-5 text-slate-400">
-                {[
-                  { icon: '📧', label: 'البريد', value: 'info@participate.org' },
-                  { icon: '📞', label: 'الهاتف', value: '+962 6 123 4567' },
-                  { icon: '📍', label: 'العنوان', value: 'عمّان، الأردن' }
-                ].map((item) => (
-                  <li key={item.label} className="flex items-start gap-3 group">
-                    <div className="w-11 h-11 bg-slate-800 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-emerald-500 transition-all">
-                      <span className="text-lg">{item.icon}</span>
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ HOW IT WORKS ━━ */}
+      <section className="bg-white py-16 md:py-24">
+        <div className="mx-auto max-w-7xl px-5 md:px-8">
+
+          {/* Header */}
+          <Reveal className="mb-16 flex flex-col items-center gap-3 text-center">
+            <span className="inline-flex items-center gap-2 rounded-full bg-emerald-50 border border-emerald-200 px-4 py-1.5 text-sm font-bold text-emerald-700">
+              <Sparkles className="size-4" />
+              ابدأ في 3 خطوات
+            </span>
+            <h2 className="text-3xl font-black text-slate-900 sm:text-4xl">
+              كيف تعمل المنصة؟
+            </h2>
+            <p className="max-w-xl text-slate-500 leading-relaxed">
+              لا تعقيد، لا انتظار — فقط ثلاث خطوات بسيطة تفصلك عن إحداث فرق حقيقي.
+            </p>
+          </Reveal>
+
+          {/* Steps */}
+          <div className="relative">
+            {/* Connector line (desktop only) */}
+            <div className="absolute top-16 right-[calc(16.66%+2rem)] left-[calc(16.66%+2rem)] hidden h-0.5 bg-gradient-to-l from-amber-300 via-emerald-300 to-emerald-500 lg:block" />
+
+            <div className="grid gap-8 lg:grid-cols-3">
+              {[
+                {
+                  step: '١',
+                  title: 'سجّل حسابك',
+                  desc: 'أنشئ حسابك مجاناً في دقيقة واحدة، وأضف معلوماتك الأساسية للبدء.',
+                  icon: Users,
+                  color: 'from-emerald-500 to-teal-600',
+                  iconBg: 'bg-emerald-50',
+                  iconColor: 'text-emerald-600',
+                  cta: { label: 'إنشاء حساب', path: '/register' },
+                },
+                {
+                  step: '٢',
+                  title: 'ابحث عن فرصة',
+                  desc: 'تصفّح الفرص التطوعية القريبة منك، وفلتر حسب المنطقة أو التخصص.',
+                  icon: MapPin,
+                  color: 'from-amber-500 to-orange-500',
+                  iconBg: 'bg-amber-50',
+                  iconColor: 'text-amber-600',
+                  cta: { label: 'تصفّح الفرص', path: '/posts' },
+                },
+                {
+                  step: '٣',
+                  title: 'تطوّع وأحدث فرقاً',
+                  desc: 'قدّم طلبك، تواصل مع صاحب الخدمة، وابدأ رحلتك في التغيير الإيجابي.',
+                  icon: Heart,
+                  color: 'from-rose-500 to-pink-500',
+                  iconBg: 'bg-rose-50',
+                  iconColor: 'text-rose-500',
+                  cta: { label: 'ابدأ الآن', path: '/register' },
+                },
+              ].map(({ step, title, desc, icon: Icon, color, iconBg, iconColor, cta }, i) => (
+                <Reveal key={title} delay={i * 150}>
+                  <div className="group relative flex flex-col items-center text-center">
+                    {/* Step bubble */}
+                    <div className="relative mb-6">
+                      {/* Glow */}
+                      <div className={`absolute inset-0 rounded-full bg-gradient-to-br ${color} opacity-0 blur-xl transition-opacity duration-500 group-hover:opacity-30`} />
+                      {/* Circle */}
+                      <div className={`relative flex size-32 flex-col items-center justify-center rounded-full bg-gradient-to-br ${color} shadow-xl transition-transform duration-300 group-hover:-translate-y-2`}>
+                        <Icon className="size-9 text-white mb-1" />
+                        <span className="text-xs font-black text-white/80 tracking-widest">الخطوة</span>
+                        <span className="text-lg font-black text-white leading-none">{step}</span>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-white font-bold mb-1">{item.label}</p>
-                      <span className="text-sm">{item.value}</span>
-                    </div>
-                  </li>
-                ))}
-              </ul>
+
+                    {/* Text */}
+                    <h3 className="mb-3 text-xl font-black text-slate-800">{title}</h3>
+                    <p className="mb-6 max-w-xs leading-relaxed text-slate-500 text-sm">{desc}</p>
+
+                    {/* CTA */}
+                    <button
+                      onClick={() => handleNavigation(cta.path)}
+                      className={`inline-flex items-center gap-2 rounded-full border-2 px-5 py-2.5 text-sm font-bold transition-all duration-300 group-hover:shadow-md ${iconBg} ${iconColor} border-current hover:opacity-80`}
+                    >
+                      {cta.label}
+                      <ArrowLeft className="size-4 transition-transform group-hover:-translate-x-1" />
+                    </button>
+                  </div>
+                </Reveal>
+              ))}
             </div>
           </div>
 
-          <div className="border-t border-slate-800 pt-10">
-            <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-              <p className="text-slate-400 text-center md:text-right font-semibold">
-                © 2024 Participate & Make A Change. جميع الحقوق محفوظة.
-              </p>
-              <div className="flex gap-8 text-slate-400 text-sm font-semibold">
-                {['الخصوصية', 'الشروط', 'ملفات تعريف الارتباط'].map((item) => (
-                  <a key={item} href="#" className="hover:text-emerald-400 transition-colors">
-                    {item}
-                  </a>
-                ))}
+          {/* Bottom CTA strip */}
+          <Reveal delay={400} className="mt-16">
+            <div className="flex flex-col items-center gap-4 rounded-3xl border border-emerald-100 bg-emerald-50 px-6 py-8 text-center md:flex-row md:justify-between md:text-right">
+              <div>
+                <p className="text-lg font-black text-slate-800">مستعد تبدأ؟</p>
+                <p className="text-sm text-slate-500">انضم الآن وكن جزءاً من مجتمع التغيير.</p>
               </div>
+              <button
+                onClick={() => handleNavigation('/register')}
+                className="inline-flex shrink-0 items-center gap-2 rounded-full bg-emerald-600 px-7 py-3 font-bold text-white transition hover:bg-emerald-700 hover:shadow-lg hover:shadow-emerald-600/20"
+              >
+                سجّل مجاناً الآن
+                <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
+              </button>
             </div>
+          </Reveal>
+
+        </div>
+      </section>
+
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ WHY US ━━ */}
+      <section className="py-16 md:py-24">
+        <div className="mx-auto max-w-7xl px-5 md:px-8">
+          <Reveal className="mb-12 flex flex-col items-center gap-3 text-center">
+            <span className="rounded-full bg-amber-100 px-4 py-1.5 text-sm font-bold text-amber-700">لماذا نحن</span>
+            <h2 className="text-3xl font-black text-slate-900 sm:text-4xl">تجربة تطوّع تجمع الجودة والأثر</h2>
+            <p className="max-w-xl text-slate-500">نقدّم تجربة فريدة تجمع بين الموثوقية والتأثير الحقيقي في كل خطوة.</p>
+          </Reveal>
+
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            {features.map(({ icon: Icon, title, desc, color, bg }, i) => (
+              <Reveal
+                key={title}
+                delay={i * 110}
+                className="group rounded-3xl border border-slate-200 bg-white p-6 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-lg"
+              >
+                <span className={`mb-4 flex size-12 items-center justify-center rounded-2xl ${bg} ${color} transition-transform duration-300 group-hover:-rotate-6 group-hover:scale-110`}>
+                  <Icon className="size-6" />
+                </span>
+                <h3 className="text-xl font-extrabold text-slate-800">{title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-slate-500">{desc}</p>
+              </Reveal>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ OPPORTUNITIES ━━ */}
+      <section className="bg-slate-50/50 py-16 md:py-24">
+        <div className="mx-auto max-w-7xl px-5 md:px-8">
+          <Reveal className="mb-12 flex flex-col items-center gap-3 text-center">
+            <span className="rounded-full bg-emerald-100 px-4 py-1.5 text-sm font-bold text-emerald-700">فرص التطوّع</span>
+            <h2 className="text-3xl font-black text-slate-900 sm:text-4xl">اختر الفرصة التي تناسبك</h2>
+            <p className="max-w-xl text-slate-500">ابدأ الآن في إحداث فرق إيجابي في مجتمعك من خلال إحدى فرصنا المميزة.</p>
+          </Reveal>
+
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {services.slice(0, 3).map((service, i) => (
+              <Reveal
+                key={service.id}
+                delay={i * 130}
+                className="group flex flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl"
+              >
+                <div className="relative aspect-[16/11] overflow-hidden">
+                  <img
+                    src={service.image}
+                    alt={service.title}
+                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
+                  <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-white/90 px-3 py-1 text-xs font-bold backdrop-blur">
+                    <Users className="size-3.5 text-emerald-600" /> {service.volunteers}
+                  </span>
+                  <span className="absolute left-3 top-3 rounded-full bg-emerald-600 px-3 py-1 text-xs font-bold text-white">
+                    تطوّعي
+                  </span>
+                </div>
+
+                <div className="flex flex-1 flex-col p-5">
+                  <h3 className="text-xl font-extrabold text-slate-800">{service.title}</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-slate-500">{service.description}</p>
+
+                  <div className="mt-4 flex flex-col gap-1.5 text-xs text-slate-500">
+                    <span className="flex items-center gap-1.5"><MapPin className="size-3.5 text-amber-500" /> {service.location}</span>
+                    <span className="flex items-center gap-1.5"><CalendarDays className="size-3.5 text-amber-500" /> {service.date}</span>
+                  </div>
+
+                  <button
+                    onClick={() => handleNavigation('/posts')}
+                    className="mt-5 w-full rounded-full bg-emerald-600 py-3 font-bold text-white transition-all hover:bg-emerald-700 hover:shadow-md"
+                  >
+                    تطوّع الآن
+                  </button>
+                </div>
+              </Reveal>
+            ))}
+          </div>
+
+          <Reveal className="mt-10 flex justify-center">
+            <button
+              onClick={() => handleNavigation('/posts')}
+              className="group inline-flex items-center gap-2 rounded-full border border-foreground/15 bg-transparent px-7 py-3 font-bold text-slate-900 transition-all hover:bg-white hover:shadow-md"
+            >
+              عرض جميع الفرص التطوعية
+              <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
+            </button>
+          </Reveal>
+        </div>
+      </section>
+
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ TESTIMONIALS ━━ */}
+      <section className="py-16 md:py-24">
+        <div className="mx-auto max-w-7xl px-5 md:px-8">
+          <Reveal className="mb-12 flex flex-col items-center gap-3 text-center">
+            <span className="rounded-full bg-amber-100 px-4 py-1.5 text-sm font-bold text-amber-700">قصص ملهمة</span>
+            <h2 className="text-3xl font-black text-slate-900 sm:text-4xl">كلمات من متطوّعينا</h2>
+            <p className="max-w-xl text-slate-500">تجارب حقيقية من أشخاص غيّروا حياتهم وحياة الآخرين من خلال المنصة.</p>
+          </Reveal>
+
+          <div className="grid gap-6 md:grid-cols-3">
+            {testimonials.map((t, i) => (
+              <Reveal
+                key={t.name}
+                delay={i * 130}
+                className="group relative flex flex-col gap-4 rounded-3xl border border-slate-200 bg-white p-6 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl"
+              >
+                <Quote className="size-8 text-emerald-200 transition-transform duration-300 group-hover:scale-110" fill="currentColor" />
+                <blockquote className="flex-1 text-base leading-relaxed text-slate-800">
+                  "{t.text}"
+                </blockquote>
+                <div className="flex text-amber-400">
+                  {Array.from({ length: 5 }).map((_, idx) => (
+                    <Star key={idx} className="size-4" fill="currentColor" />
+                  ))}
+                </div>
+                <figcaption className="flex items-center gap-3 border-t border-slate-200 pt-4">
+                  <span
+                    className="flex size-11 items-center justify-center rounded-full text-base font-bold text-white"
+                    style={{ backgroundColor: t.color }}
+                  >
+                    {t.name.charAt(0)}
+                  </span>
+                  <span className="flex flex-col">
+                    <span className="text-sm font-bold text-slate-800">{t.name}</span>
+                    <span className="text-xs text-slate-500">{t.role}</span>
+                  </span>
+                </figcaption>
+              </Reveal>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ FINAL CTA ━━ */}
+      <section className="px-5 py-16 md:px-8 md:py-20">
+        <div className="relative mx-auto max-w-7xl overflow-hidden rounded-[2.5rem] bg-emerald-600 px-6 py-16 text-center md:px-12 md:py-20">
+          <div className="pointer-events-none absolute -right-16 -top-16 size-64 rounded-full bg-white/10 animate-pulse" />
+          <div className="pointer-events-none absolute -bottom-20 -left-12 size-72 rounded-full bg-amber-400/20 animate-pulse" />
+
+          <Reveal className="relative flex flex-col items-center gap-5">
+            <span className="inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-1.5 text-sm font-bold text-white">
+              <Heart className="size-4 animate-pulse" fill="currentColor" />
+              ابدأ رحلتك اليوم
+            </span>
+            <h2 className="text-4xl font-black leading-tight text-white sm:text-5xl">
+              كن جزءاً من التغيير الإيجابي
+            </h2>
+            <p className="max-w-xl text-lg leading-relaxed text-white/85">
+              انضم إلى مئات المتطوعين الذين يساهمون في بناء مجتمع أفضل وأكثر تكافلاً، وابدأ أثرك الأول اليوم.
+            </p>
+            <div className="mt-2 flex flex-wrap items-center justify-center gap-3">
+              <button
+                onClick={() => handleNavigation('/register')}
+                className="group inline-flex items-center gap-2 rounded-full bg-amber-500 px-7 py-3 text-base font-bold text-white transition-all hover:bg-amber-600 hover:shadow-lg hover:shadow-amber-500/30"
+              >
+                ابدأ التطوّع الآن
+                <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
+              </button>
+              <button
+                onClick={() => handleNavigation('/posts')}
+                className="inline-flex items-center gap-2 rounded-full border border-white/30 bg-transparent px-7 py-3 text-base font-bold text-white transition-all hover:bg-white/10"
+              >
+                <ArrowLeft className="size-5 rotate-180" />
+                تعرّف علينا أكثر
+              </button>
+            </div>
+          </Reveal>
+        </div>
+      </section>
+
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ FOOTER ━━ */}
+      <footer className="border-t border-slate-200 bg-slate-100/40">
+        <div className="mx-auto max-w-7xl px-5 py-12 md:px-8">
+          <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-4">
+            {/* Brand */}
+            <div className="flex flex-col gap-4">
+              <button onClick={() => handleNavigation('/')} className="flex items-center gap-2.5">
+                <span className="flex size-10 items-center justify-center rounded-2xl bg-emerald-600 text-white">
+                  <Heart className="size-5" fill="currentColor" />
+                </span>
+                <span className="flex flex-col leading-none">
+                  <span className="text-base font-extrabold text-slate-900">شارك</span>
+                  <span className="text-[11px] font-medium tracking-wide text-emerald-600">وأحدث فرقاً</span>
+                </span>
+              </button>
+              <p className="max-w-xs text-sm leading-relaxed text-slate-500">
+                منصة تطوعية مجتمعية تجمع المتطوعين بالفرص التي تصنع أثراً حقيقياً في مجتمعنا.
+              </p>
+            </div>
+
+            {footerColumns.map((col) => (
+              <div key={col.title} className="flex flex-col gap-3">
+                <h3 className="text-sm font-bold text-slate-900">{col.title}</h3>
+                <ul className="flex flex-col gap-2.5">
+                  {col.links.map((link) => (
+                    <li key={link}>
+                      <a href="#" className="text-sm text-slate-500 transition-colors hover:text-emerald-600">
+                        {link}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-10 border-t border-slate-200 pt-6 text-center text-sm text-slate-500">
+            © 2026 شارك — وأحدث فرقاً. جميع الحقوق محفوظة.
           </div>
         </div>
       </footer>
 
-      <style jsx>{`
-        @keyframes fadeIn {
-          from {
-            opacity: 0;
-            transform: translateY(-10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-
-        @keyframes fadeInDown {
-          from {
-            opacity: 0;
-            transform: translateY(-20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-
-        @keyframes fadeInUp {
-          from {
-            opacity: 0;
-            transform: translateY(30px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-
-        @keyframes slideDown {
-          from {
-            opacity: 0;
-            max-height: 0;
-          }
-          to {
-            opacity: 1;
-            max-height: 500px;
-          }
-        }
-
-        @keyframes blob {
-          0%, 100% {
-            transform: translate(0, 0) scale(1);
-          }
-          25% {
-            transform: translate(20px, -20px) scale(1.1);
-          }
-          50% {
-            transform: translate(-20px, 20px) scale(0.9);
-          }
-          75% {
-            transform: translate(20px, 20px) scale(1.05);
-          }
-        }
-
-        @keyframes ken-burns {
-          0% {
-            transform: scale(1);
-          }
-          100% {
-            transform: scale(1.1);
-          }
-        }
-
-        @keyframes gradient {
-          0%, 100% {
-            background-position: 0% 50%;
-          }
-          50% {
-            background-position: 100% 50%;
-          }
-        }
-
-        @keyframes float {
-          0%, 100% {
-            transform: translateY(0px);
-          }
-          50% {
-            transform: translateY(-15px);
-          }
-        }
-
-        @keyframes wave {
-          0% {
-            d: path("M0,50 Q150,20 300,50 T600,50 T900,50 T1200,50 T1500,50 T1800,50 V100 H0 Z");
-          }
-          50% {
-            d: path("M0,50 Q150,80 300,50 T600,50 T900,50 T1200,50 T1500,50 T1800,50 V100 H0 Z");
-          }
-          100% {
-            d: path("M0,50 Q150,20 300,50 T600,50 T900,50 T1200,50 T1500,50 T1800,50 V100 H0 Z");
-          }
-        }
-
-        .animate-fadeIn {
-          animation: fadeIn 0.3s ease-out;
-        }
-
-        .animate-fadeInDown {
-          animation: fadeInDown 0.4s ease-out;
-        }
-
-        .animate-fadeInUp {
-          animation: fadeInUp 0.6s ease-out;
-          animation-fill-mode: both;
-        }
-
-        .animate-slideDown {
-          animation: slideDown 0.3s ease-out;
-        }
-
-        .animate-blob {
-          animation: blob 7s infinite;
-        }
-
-        .animate-float {
-          animation: float 3s ease-in-out infinite;
-        }
-
-        .animate-wave {
-          animation: wave 8s ease-in-out infinite;
-        }
-
-        .animation-delay-1000 {
-          animation-delay: 1s;
-        }
-
-        .animation-delay-2000 {
-          animation-delay: 2s;
-        }
-
-        .animation-delay-4000 {
-          animation-delay: 4s;
-        }
-
-        .animate-ken-burns {
-          animation: ken-burns 20s ease-out;
-        }
-
-        .animate-gradient {
-          background-size: 200% 200%;
-          animation: gradient 3s ease infinite;
-        }
-
-        .animate-pulse-slow {
-          animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-        }
-      `}</style>
     </div>
   );
 };

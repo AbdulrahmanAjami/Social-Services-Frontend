@@ -5,395 +5,366 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerShadow from 'leaflet/dist/images/marker-shadow.png';
+import {
+  Home, MapPin, Navigation, AlertCircle, Loader2,
+  HeartHandshake, ArrowLeft, User, Briefcase,
+} from 'lucide-react';
 
-// Fix Leaflet marker icon
+
+
+// ─── Fix Leaflet marker icons for Vite ────────────────────────────────────────
 delete L.Icon.Default.prototype._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconUrl: markerIcon,
-  shadowUrl: markerShadow,
-});
+L.Icon.Default.mergeOptions({ iconUrl: markerIcon, shadowUrl: markerShadow });
 
-// خريطة إحداثيات المحافظات الأردنية (حسب الاسم)
-const countyNameCoordinates = {
-  "العبدلي": [31.9539, 35.9106],
-  "عبدون": [31.9754, 35.8656],
-  "الرصيفة": [32.0500, 36.0600],
-  "إربد": [32.5556, 35.8500],
-  "الكورة": [32.5000, 35.7000],
-  "معان": [30.1988, 35.7348],
-  "العقبة": [29.5266, 35.0063],
-  "مأدبا": [31.7157, 35.7936],
-  "الزرقاء": [32.0728, 36.0878],
-  "السلط": [32.0391, 35.7273],
-  "الكرك": [31.1826, 35.7054],
-  "عجلون": [32.3325, 35.7508],
-  "جرش": [32.2750, 35.8969],
-  "المفرق": [32.3426, 36.2042],
-  "الطفيلة": [30.8374, 35.6072],
-  "بصيرا": [30.7500, 35.6000],
-  "تلاع العلي": [31.9800, 35.8800],
-};
-
-// أيقونات جميلة للـ markers
-const createServiceIcon = () => {
-  return L.divIcon({
+// ─── Custom map icons ─────────────────────────────────────────────────────────
+const createServiceIcon = () =>
+  L.divIcon({
     className: 'custom-service-icon',
     html: `
       <div style="
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 40px;
-        height: 40px;
-        background-color: #2E7D32;
-        color: white;
-        border-radius: 50%;
-        border: 3px solid white;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-        font-size: 20px;
-        font-weight: bold;
-      ">
-        📍
-      </div>
-    `,
-    iconSize: [40, 40],
-    iconAnchor: [20, 20],
-    popupAnchor: [0, -20],
+        display:flex;align-items:center;justify-content:center;
+        width:42px;height:42px;
+        background:linear-gradient(135deg,#059669,#0d9488);
+        border-radius:50%;border:3px solid white;
+        box-shadow:0 3px 10px rgba(0,0,0,0.25);
+        font-size:20px;
+      ">📍</div>`,
+    iconSize: [42, 42],
+    iconAnchor: [21, 21],
+    popupAnchor: [0, -24],
   });
-};
 
-const createUserIcon = () => {
-  return L.divIcon({
+const createUserIcon = () =>
+  L.divIcon({
     className: 'custom-user-icon',
     html: `
       <div style="
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 45px;
-        height: 45px;
-        background-color: #1976D2;
-        color: white;
-        border-radius: 50%;
-        border: 4px solid white;
-        box-shadow: 0 3px 10px rgba(0,0,0,0.4);
-        font-size: 24px;
-        font-weight: bold;
-      ">
-        📌
-      </div>
-    `,
-    iconSize: [45, 45],
-    iconAnchor: [22, 22],
-    popupAnchor: [0, -25],
+        display:flex;align-items:center;justify-content:center;
+        width:46px;height:46px;
+        background:linear-gradient(135deg,#f59e0b,#d97706);
+        border-radius:50%;border:4px solid white;
+        box-shadow:0 4px 12px rgba(0,0,0,0.3);
+        font-size:22px;
+      ">📌</div>`,
+    iconSize: [46, 46],
+    iconAnchor: [23, 23],
+    popupAnchor: [0, -26],
   });
+
+// ─── Haversine distance ────────────────────────────────────────────────────────
+const calculateDistance = (lat1, lon1, lat2, lon2) => {
+  const R = 6371;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 };
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// MAIN COMPONENT
+// ═══════════════════════════════════════════════════════════════════════════════
 const MapPage = () => {
+  
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [loading, setLoading]           = useState(true);
+  const [error, setError]               = useState(null);
   const [userLocation, setUserLocation] = useState(null);
-  const [services, setServices] = useState([]);
+  const [services, setServices]         = useState([]);
+  const [selectedService, setSelectedService] = useState(null);
 
-  // حساب المسافة بين نقطتين (Haversine formula)
-  const calculateDistance = (lat1, lon1, lat2, lon2) => {
-    const R = 6371; // Earth radius in km
-    const dLat = ((lat2 - lat1) * Math.PI) / 180;
-    const dLon = ((lon2 - lon1) * Math.PI) / 180;
-    const a =
-      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos((lat1 * Math.PI) / 180) *
-        Math.cos((lat2 * Math.PI) / 180) *
-        Math.sin(dLon / 2) *
-        Math.sin(dLon / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return R * c;
-  };
-
-  // الحصول على موقع المستخدم
-  const getUserLocation = () => {
-    return new Promise((resolve) => {
-      if (!navigator.geolocation) {
-        // موقع افتراضي (عمّان)
-        const defaultLocation = { lat: 31.9454, lng: 35.9284 };
-        setUserLocation(defaultLocation);
-        resolve(defaultLocation);
-        return;
-      }
-
+  // ── Get user location ────────────────────────────────────────────────────
+  const getUserLocation = () =>
+    new Promise((resolve) => {
+      const fallback = { lat: 31.9454, lng: 35.9284 };
+      if (!navigator.geolocation) { setUserLocation(fallback); resolve(fallback); return; }
       navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const location = {
-            lat: position.coords.latitude,
-            lng: position.coords.longitude,
-          };
-          setUserLocation(location);
-          resolve(location);
+        ({ coords }) => {
+          const loc = { lat: coords.latitude, lng: coords.longitude };
+          setUserLocation(loc); resolve(loc);
         },
-        () => {
-          // استخدم موقع افتراضي عند فشل التحديد
-          const defaultLocation = { lat: 31.9454, lng: 35.9284 };
-          setUserLocation(defaultLocation);
-          resolve(defaultLocation);
-        }
+        () => { setUserLocation(fallback); resolve(fallback); }
       );
     });
-  };
 
-  // جلب المنشورات من API
+  // ── Fetch posts from API (identical to original) ─────────────────────────
   const fetchPosts = async (lat, lng) => {
     try {
       const token = localStorage.getItem('accessToken');
-      if (!token) {
-        navigate('/login');
-        return [];
-      }
+      if (!token) { navigate('/login'); return []; }
 
       const url = new URL('https://localhost:7244/api/Posts/Get Filtered Posts');
       url.searchParams.append('latitude', lat);
       url.searchParams.append('longitude', lng);
-      url.searchParams.append('radius', 50); // 50 km
+      url.searchParams.append('radius', 50);
 
       const response = await fetch(url.toString(), {
         method: 'GET',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       });
 
-      if (response.status === 401) {
-        navigate('/login');
-        return [];
-      }
-
-      if (!response.ok) {
-        throw new Error('فشل جلب المنشورات');
-      }
+      if (response.status === 401) { navigate('/login'); return []; }
+      if (!response.ok) throw new Error('فشل جلب المنشورات');
 
       let posts = await response.json();
-      
-      // معالجة استجابة API (قد تكون بصيغ مختلفة)
       if (!Array.isArray(posts)) {
-        if (posts.data && Array.isArray(posts.data)) {
-          posts = posts.data;
-        } else if (posts.posts && Array.isArray(posts.posts)) {
-          posts = posts.posts;
-        } else {
-          posts = [];
-        }
+        posts = posts.data ?? posts.posts ?? [];
       }
 
-      console.log('Posts:', posts);
-
-      // ترتيب حسب المسافة (إذا توفرت coordinates)
-      const postsWithDistance = posts.map((post) => {
-        let distance = 999999;
-        if (post.latitude && post.longitude) {
-          distance = calculateDistance(lat, lng, post.latitude, post.longitude);
-        }
-        return {
+      return posts
+        .map((post) => ({
           ...post,
-          distance,
-        };
-      }).sort((a, b) => a.distance - b.distance);
-
-      return postsWithDistance;
+          distance:
+            post.latitude && post.longitude
+              ? calculateDistance(lat, lng, post.latitude, post.longitude)
+              : 999999,
+        }))
+        .sort((a, b) => a.distance - b.distance);
     } catch (err) {
-      console.error('خطأ في جلب المنشورات:', err);
       setError('فشل جلب المنشورات');
       return [];
     }
   };
 
-  // تحميل البيانات عند تحميل المكون
+  // ── Load on mount (identical to original) ────────────────────────────────
   useEffect(() => {
     const loadData = async () => {
       try {
         setLoading(true);
-        
-        // الحصول على موقع المستخدم
         const location = await getUserLocation();
-        
-        // جلب المنشورات
-        const posts = await fetchPosts(location.lat, location.lng);
+        const posts    = await fetchPosts(location.lat, location.lng);
         setServices(posts);
-        
-        setLoading(false);
       } catch (err) {
-        console.error('خطأ:', err);
         setError(err.message || 'حدث خطأ ما');
+      } finally {
         setLoading(false);
       }
     };
-
     loadData();
   }, []);
 
+  // ── Derived data ─────────────────────────────────────────────────────────
+  const servicesWithCoords = services.filter(s => s.latitude != null && s.longitude != null);
+  const closestService = servicesWithCoords[0] ?? null;
+
+
+  const [showNearestList, setShowNearestList] = useState(true);
+const nearest5 = servicesWithCoords.slice(0, 5);
+
+  // ── Loading screen ───────────────────────────────────────────────────────
   if (loading) {
     return (
-      <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ textAlign: 'center' }}>
-          <p>جاري تحميل الخريطة...</p>
+      <div className="flex h-screen flex-col items-center justify-center gap-4 bg-white" dir="rtl">
+        <div className="flex size-20 items-center justify-center rounded-full bg-emerald-50">
+          <Loader2 className="size-10 animate-spin text-emerald-600" />
         </div>
+        <p className="text-lg font-bold text-slate-700">جاري تحميل الخريطة...</p>
+        <p className="text-sm text-slate-400">نحدد موقعك ونجلب أقرب الفرص التطوعية</p>
       </div>
     );
   }
 
+  // ── Error screen ─────────────────────────────────────────────────────────
   if (error) {
     return (
-      <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'red' }}>
-        <div style={{ textAlign: 'center' }}>
-          <p>خطأ: {error}</p>
+      <div className="flex h-screen flex-col items-center justify-center gap-4 bg-white" dir="rtl">
+        <div className="flex size-20 items-center justify-center rounded-full bg-red-50">
+          <AlertCircle className="size-10 text-red-500" />
+        </div>
+        <p className="text-lg font-bold text-red-600">حدث خطأ</p>
+        <p className="text-slate-500">{error}</p>
+        <button
+          onClick={() => navigate('/')}
+          className="rounded-full bg-emerald-600 px-6 py-2.5 font-bold text-white transition hover:bg-emerald-700"
+        >
+          العودة للرئيسية
+        </button>
+      </div>
+    );
+  }
+
+  // ── No location ──────────────────────────────────────────────────────────
+  if (!userLocation) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-white" dir="rtl">
+        <div className="flex flex-col items-center gap-3">
+          <Navigation className="size-10 animate-pulse text-emerald-600" />
+          <p className="font-bold text-slate-700">جاري الحصول على موقعك...</p>
         </div>
       </div>
     );
   }
 
-  if (!userLocation) {
-    return (
-      <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div>جاري الحصول على الموقع...</div>
-      </div>
-    );
-  }
-
+  // ════════════════════════════════════════════════════════════════════════
+  // MAIN RENDER
+  // ════════════════════════════════════════════════════════════════════════
   return (
-    <div style={{ height: '100vh', width: '100%', position: 'relative' }}>
-      {/* زر الرجوع للرئيسية */}
-      <button
-        onClick={() => navigate('/')}
-        style={{
-          position: 'absolute',
-          top: '20px',
-          right: '20px',
-          zIndex: 1000,
-          padding: '10px 16px',
-          backgroundColor: 'white',
-          color: '#333',
-          border: 'none',
-          borderRadius: '8px',
-          cursor: 'pointer',
-          fontWeight: 'bold',
-          fontSize: '14px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
-          transition: 'all 0.3s ease',
-          fontFamily: 'Arial',
-        }}
-        onMouseEnter={(e) => {
-          e.target.style.backgroundColor = '#f5f5f5';
-          e.target.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.25)';
-        }}
-        onMouseLeave={(e) => {
-          e.target.style.backgroundColor = 'white';
-          e.target.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.15)';
-        }}
-      >
-        ← الرئيسية
-      </button>
+    <div className="relative h-screen w-full overflow-hidden bg-white" dir="rtl">
 
+      {/* ── Top bar ──────────────────────────────────────────────────────── */}
+      <div className="absolute right-0 top-0 left-0 z-[1000] flex items-center justify-between gap-3 bg-white/90 px-4 py-3 shadow-sm backdrop-blur-md border-b border-slate-100">
+        {/* Logo */}
+        <button onClick={() => navigate('/')} className="flex items-center gap-2.5">
+          <span className="flex size-9 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-700 shadow-md">
+            <HeartHandshake className="size-5 text-white" />
+          </span>
+          <span className="hidden flex-col leading-tight sm:flex">
+            <span className="text-sm font-black text-slate-900">
+              Participate <span className="text-emerald-600">&amp;</span> Make
+            </span>
+            <span className="text-[10px] font-bold uppercase tracking-widest text-amber-500">a change</span>
+          </span>
+        </button>
+
+        {/* Center label */}
+        <div className="flex items-center gap-2 rounded-full border border-emerald-100 bg-emerald-50 px-4 py-1.5">
+          <MapPin className="size-4 text-emerald-600" />
+          <span className="text-sm font-bold text-emerald-700">أقرب الخدمات التطوعية</span>
+          {servicesWithCoords.length > 0 && (
+            <span className="rounded-full bg-emerald-600 px-2 py-0.5 text-xs font-bold text-white">
+              {servicesWithCoords.length}
+            </span>
+          )}
+        </div>
+
+        {/* Back button */}
+        <button
+          onClick={() => navigate('/')}
+          className="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 transition hover:bg-slate-50 hover:shadow-md"
+        >
+          <Home className="size-4" />
+          <span className="hidden sm:inline">الرئيسية</span>
+        </button>
+      </div>
+
+
+      {/* ── Nearest 5 Services Panel ─────────────────────────────────── */}
+{nearest5.length > 0 && (
+  <div className="absolute top-20 right-4 z-[999] w-72">
+    {/* Toggle Button */}
+    <button
+      onClick={() => setShowNearestList(!showNearestList)}
+      className="mb-2 flex w-full items-center justify-between rounded-2xl bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white shadow-lg transition hover:bg-emerald-700"
+    >
+      <span className="flex items-center gap-2">
+        <Navigation className="size-4" />
+        أقرب 5 خدمات إليك
+      </span>
+      <span className="rounded-full bg-white/20 px-2 py-0.5 text-xs">
+        {showNearestList ? '▲ إخفاء' : '▼ عرض'}
+      </span>
+    </button>
+
+    {/* List */}
+    {showNearestList && (
+      <div className="flex flex-col gap-2 overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-xl">
+        {nearest5.map((service, index) => {
+          const dist = calculateDistance(
+            userLocation.lat, userLocation.lng,
+            service.latitude, service.longitude
+          );
+          return (
+            <div
+              key={service.postID ?? index}
+              className="flex items-center gap-3 border-b border-slate-100 px-4 py-3 last:border-0 hover:bg-emerald-50 transition"
+            >
+              {/* Rank */}
+              <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-xs font-black text-white">
+                {index + 1}
+              </div>
+
+              {/* Info */}
+              <div className="flex-1 text-right min-w-0">
+                <p className="truncate text-sm font-bold text-slate-800">
+                  {service.postTitle || 'بدون عنوان'}
+                </p>
+                <div className="flex items-center justify-end gap-2 text-xs text-slate-400">
+                  <span>{service.countyName || 'غير محددة'}</span>
+                  <span className="font-bold text-emerald-600">{dist.toFixed(1)} كم</span>
+                </div>
+              </div>
+
+              {/* Button */}
+              <button
+                onClick={() => setSelectedService(service)}
+                className="shrink-0 rounded-xl bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-emerald-700"
+              >
+                عرض
+              </button>
+            </div>
+          );
+        })}
+      </div>
+    )}
+  </div>
+)}
+
+      {/* ── Map ──────────────────────────────────────────────────────────── */}
       <MapContainer
         center={[userLocation.lat, userLocation.lng]}
         zoom={13}
-        style={{ height: '100%', width: '100%' }}
+        className="h-full w-full"
+        style={{ paddingTop: '60px' }}
       >
         <TileLayer
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          attribution='© OpenStreetMap contributors'
+          attribution="© OpenStreetMap contributors"
           maxZoom={19}
         />
 
-        {/* Marker على موقع المستخدم */}
+        {/* User marker */}
         <Marker position={[userLocation.lat, userLocation.lng]} icon={createUserIcon()}>
           <Popup>
-            <div style={{ textAlign: 'center', fontFamily: 'Arial', direction: 'rtl' }}>
-              <strong>موقعك الحالي</strong>
+            <div style={{ direction: 'rtl', textAlign: 'right', fontFamily: 'system-ui', minWidth: '140px' }}>
+              <p style={{ margin: 0, fontWeight: 'bold', color: '#d97706' }}>📌 موقعك الحالي</p>
             </div>
           </Popup>
         </Marker>
 
-        {/* Markers للخدمات */}
-        {services.map((service, index) => {
-          console.log('Marker:', service.postID, service.countyName);
-          
-          // احصل على إحداثيات المحافظة من countyName
-          let markerLat = 31.9539;  // عمّان (افتراضي)
-          let markerLng = 35.9106;
-
-          if (service.countyName) {
-            // ابحث عن أي key في countyNameCoordinates يكون substring من countyName
-            const matchedKey = Object.keys(countyNameCoordinates).find(
-              (key) => service.countyName.includes(key)
-            );
-            
-            if (matchedKey) {
-              const coords = countyNameCoordinates[matchedKey];
-              markerLat = coords[0];
-              markerLng = coords[1];
-            } else if (service.latitude && service.longitude) {
-              // fallback إذا كانت coordinates متوفرة
-              markerLat = service.latitude;
-              markerLng = service.longitude;
-            }
-          } else if (service.latitude && service.longitude) {
-            // fallback إذا كانت coordinates متوفرة
-            markerLat = service.latitude;
-            markerLng = service.longitude;
-          }
-
-          console.log('Coordinates:', markerLat, markerLng);
-
-          // حساب المسافة بين موقع المستخدم والخدمة
-          const distance = calculateDistance(
-            userLocation.lat,
-            userLocation.lng,
-            markerLat,
-            markerLng
+        {/* Service markers */}
+        {servicesWithCoords.map((service, index) => {
+          const dist = calculateDistance(
+            userLocation.lat, userLocation.lng,
+            service.latitude, service.longitude
           );
-
-          const distanceText = `المسافة: ${distance.toFixed(1)} كم`;
-
           return (
-            <Marker key={index} position={[markerLat, markerLng]} icon={createServiceIcon()}>
+            <Marker
+              key={service.postID ?? index}
+              position={[service.latitude, service.longitude]}
+              icon={createServiceIcon()}
+              eventHandlers={{ click: () => setSelectedService(service) }}
+            >
               <Popup>
-                <div style={{ direction: 'rtl', textAlign: 'right', fontFamily: 'Arial', width: '250px' }}>
-                  <h3 style={{ margin: '0 0 10px 0', color: '#2E7D32', fontSize: '14px', fontWeight: 'bold' }}>
+                <div style={{ direction: 'rtl', textAlign: 'right', fontFamily: 'system-ui', width: '240px' }}>
+                  {/* Title */}
+                  <p style={{ margin: '0 0 6px', fontWeight: '800', fontSize: '14px', color: '#065f46' }}>
                     {service.postTitle || 'بدون عنوان'}
-                  </h3>
-                  <p style={{ margin: '8px 0', fontSize: '12px', color: '#666' }}>
+                  </p>
+                  {/* Description */}
+                  <p style={{ margin: '0 0 8px', fontSize: '12px', color: '#64748b', lineHeight: '1.5' }}>
                     {service.description || 'بدون وصف'}
                   </p>
-                  <p style={{ margin: '8px 0', fontSize: '12px' }}>
-                    <strong>المنطقة:</strong> {service.countyName || 'غير محددة'}
-                  </p>
-                  <p style={{ margin: '8px 0', fontSize: '12px' }}>
-                    <strong>المقدم:</strong> {service.authorName || 'مستخدم'}
-                  </p>
-                  <p style={{ margin: '8px 0', fontSize: '12px', color: '#1976D2', fontWeight: 'bold' }}>
-                    {distanceText}
-                  </p>
+                  {/* Meta */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '10px', fontSize: '12px' }}>
+                    <span style={{ color: '#64748b' }}>📍 {service.countyName || 'غير محددة'}</span>
+                    <span style={{ color: '#64748b' }}>👤 {service.authorName || 'مستخدم'}</span>
+                    <span style={{ color: '#059669', fontWeight: '700' }}>🗺 {dist.toFixed(1)} كم</span>
+                  </div>
+                  {/* CTA */}
                   <button
-                    onClick={() => {
-                      alert(`تم الضغط على: ${service.postTitle}`);
-                    }}
+                    onClick={() => setSelectedService(service)}
                     style={{
-                      width: '100%',
-                      padding: '8px',
-                      background: '#2E7D32',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '4px',
-                      cursor: 'pointer',
-                      fontWeight: 'bold',
-                      fontFamily: 'Arial',
-                      marginTop: '8px',
+                      width: '100%', padding: '8px 0',
+                      background: 'linear-gradient(135deg,#059669,#0d9488)',
+                      color: 'white', border: 'none', borderRadius: '10px',
+                      cursor: 'pointer', fontWeight: '700', fontSize: '13px',
+                      fontFamily: 'system-ui',
                     }}
                   >
-                    تقدم للخدمة
+                    عرض التفاصيل
                   </button>
                 </div>
               </Popup>
@@ -402,106 +373,145 @@ const MapPage = () => {
         })}
       </MapContainer>
 
-      {/* بطاقة أقرب خدمة */}
-      {services.length > 0 && (
-        <div
-          style={{
-            position: 'absolute',
-            bottom: '20px',
-            left: '20px',
-            right: '20px',
-            zIndex: 999,
-            backgroundColor: 'white',
-            borderRadius: '12px',
-            padding: '16px',
-            boxShadow: '0 4px 16px rgba(0, 0, 0, 0.2)',
-            maxWidth: '400px',
-            fontFamily: 'Arial',
-            direction: 'rtl',
-          }}
-        >
-          {(() => {
-            const closestService = services[0]; // المصفوفة مرتبة حسب المسافة
-            const distance = calculateDistance(
-              userLocation.lat,
-              userLocation.lng,
-              (countyNameCoordinates[closestService.countyName] || [31.9539, 35.9106])[0],
-              (countyNameCoordinates[closestService.countyName] || [31.9539, 35.9106])[1]
-            );
+      {/* ── Closest service card (bottom) ───────────────────────────────── */}
+      {closestService && !selectedService && (
+        <div className="absolute bottom-6 right-4 left-4 z-[999] mx-auto max-w-sm">
+          <div className="overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-2xl shadow-slate-900/10">
+            {/* Card header */}
+            <div className="flex items-center gap-2 bg-emerald-600 px-5 py-3">
+              <Navigation className="size-4 text-white" />
+              <span className="text-sm font-bold text-white">أقرب خدمة إليك</span>
+              <span className="mr-auto rounded-full bg-white/20 px-2.5 py-0.5 text-xs font-bold text-white">
+                {calculateDistance(
+                  userLocation.lat, userLocation.lng,
+                  closestService.latitude, closestService.longitude
+                ).toFixed(1)} كم
+              </span>
+            </div>
 
-            return (
-              <>
-                <h2
-                  style={{
-                    margin: '0 0 8px 0',
-                    fontSize: '16px',
-                    color: '#2E7D32',
-                    fontWeight: 'bold',
-                  }}
-                >
-                  🎯 أقرب خدمة
-                </h2>
-                <h3
-                  style={{
-                    margin: '0 0 8px 0',
-                    fontSize: '15px',
-                    color: '#333',
-                    fontWeight: 'bold',
-                  }}
-                >
-                  {closestService.postTitle || 'بدون عنوان'}
-                </h3>
-                <p
-                  style={{
-                    margin: '0 0 8px 0',
-                    fontSize: '13px',
-                    color: '#666',
-                    lineHeight: '1.4',
-                  }}
-                >
-                  {closestService.description || 'بدون وصف'}
-                </p>
-                <div
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    marginBottom: '12px',
-                    fontSize: '13px',
-                  }}
-                >
-                  <span style={{ color: '#666' }}>
-                    <strong>المنطقة:</strong> {closestService.countyName || 'غير محددة'}
+            {/* Card body */}
+            <div className="p-4 text-right">
+              <h3 className="mb-1 text-base font-extrabold text-slate-800 line-clamp-1">
+                {closestService.postTitle || 'بدون عنوان'}
+              </h3>
+              <p className="mb-3 text-sm text-slate-500 line-clamp-2 leading-relaxed">
+                {closestService.description || 'بدون وصف'}
+              </p>
+              <div className="mb-4 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-400">
+                <span className="flex items-center gap-1">
+                  <MapPin className="size-3 text-amber-500" />
+                  {closestService.countyName || 'غير محددة'}
+                </span>
+                {closestService.authorName && (
+                  <span className="flex items-center gap-1">
+                    <User className="size-3 text-emerald-500" />
+                    {closestService.authorName}
                   </span>
-                  <span style={{ color: '#1976D2', fontWeight: 'bold' }}>
-                    {distance.toFixed(1)} كم
+                )}
+              </div>
+              <button
+                onClick={() => setSelectedService(closestService)}
+                className="w-full rounded-2xl bg-emerald-600 py-2.5 text-sm font-bold text-white transition hover:bg-emerald-700 hover:shadow-md hover:shadow-emerald-600/20"
+              >
+                عرض التفاصيل والتقديم
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Service detail panel (slide-in) ─────────────────────────────── */}
+      {selectedService && (
+        <div
+          className="absolute inset-0 z-[1100] flex items-end justify-center bg-black/50 backdrop-blur-sm p-4"
+          onClick={() => setSelectedService(null)}
+        >
+          <div
+            className="w-full max-w-md overflow-hidden rounded-3xl bg-white shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between bg-emerald-600 px-6 py-4">
+              <h2 className="text-lg font-black text-white line-clamp-1">
+                {selectedService.postTitle || 'بدون عنوان'}
+              </h2>
+              <button
+                onClick={() => setSelectedService(null)}
+                className="flex size-8 items-center justify-center rounded-full bg-white/20 text-white transition hover:bg-white/30"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="p-6 text-right">
+              <p className="mb-5 leading-relaxed text-slate-600">
+                {selectedService.description || 'بدون وصف'}
+              </p>
+
+              <div className="mb-5 flex flex-col gap-2 text-sm text-slate-500">
+                <span className="flex items-center gap-2">
+                  <MapPin className="size-4 text-amber-500" />
+                  {selectedService.countyName || 'غير محددة'}
+                </span>
+                {selectedService.authorName && (
+                  <span className="flex items-center gap-2">
+                    <User className="size-4 text-emerald-500" />
+                    {selectedService.authorName}
                   </span>
-                </div>
+                )}
+                {selectedService.professionName && (
+                  <span className="flex items-center gap-2">
+                    <Briefcase className="size-4 text-emerald-500" />
+                    {selectedService.professionName}
+                  </span>
+                )}
+                {selectedService.latitude && (
+                  <span className="flex items-center gap-2 font-bold text-emerald-700">
+                    <Navigation className="size-4" />
+                    {calculateDistance(
+                      userLocation.lat, userLocation.lng,
+                      selectedService.latitude, selectedService.longitude
+                    ).toFixed(1)} كم منك
+                  </span>
+                )}
+              </div>
+
+              <div className="flex gap-3">
                 <button
                   onClick={() => {
-                    alert(`تم الضغط على: ${closestService.postTitle}`);
+                    alert(`تم الضغط على: ${selectedService.postTitle}`);
                   }}
-                  style={{
-                    width: '100%',
-                    padding: '10px',
-                    background: '#2E7D32',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '6px',
-                    cursor: 'pointer',
-                    fontWeight: 'bold',
-                    fontFamily: 'Arial',
-                    fontSize: '14px',
-                    transition: 'background-color 0.3s ease',
-                  }}
-                  onMouseEnter={(e) => (e.target.style.backgroundColor = '#1d5620')}
-                  onMouseLeave={(e) => (e.target.style.backgroundColor = '#2E7D32')}
+                  className="flex-1 rounded-2xl bg-emerald-600 py-3 font-bold text-white transition hover:bg-emerald-700 hover:shadow-md"
                 >
                   تقدم للخدمة
                 </button>
-              </>
-            );
-          })()}
+                <button
+                  onClick={() => setSelectedService(null)}
+                  className="flex-1 rounded-2xl bg-slate-100 py-3 font-bold text-slate-700 transition hover:bg-slate-200"
+                >
+                  إغلاق
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Stats badge (top-left) ───────────────────────────────────────── */}
+      {servicesWithCoords.length === 0 && !loading && (
+        <div className="absolute bottom-6 right-4 left-4 z-[999] mx-auto max-w-sm">
+          <div className="flex flex-col items-center gap-3 rounded-3xl border border-slate-100 bg-white p-6 text-center shadow-xl">
+            <span className="text-4xl">🗺</span>
+            <p className="font-bold text-slate-700">لا توجد خدمات قريبة منك</p>
+            <p className="text-sm text-slate-400">جرّب توسيع نطاق البحث أو تصفّح جميع الخدمات</p>
+            <button
+              onClick={() => navigate('/posts')}
+              className="rounded-full bg-emerald-600 px-6 py-2.5 text-sm font-bold text-white transition hover:bg-emerald-700"
+            >
+              تصفّح جميع الخدمات
+            </button>
+          </div>
         </div>
       )}
     </div>
