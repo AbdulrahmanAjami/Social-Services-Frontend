@@ -96,7 +96,7 @@ const MapPage = () => {
       const token = localStorage.getItem('accessToken');
       if (!token) { navigate('/login'); return []; }
 
-      const url = new URL('https://localhost:7244/api/Posts/Get Filtered Posts');
+      const url = new URL('https://yousefalhamad-001-site1.ltempurl.com/api/Posts/Get Filtered Posts');
       url.searchParams.append('latitude', lat);
       url.searchParams.append('longitude', lng);
       url.searchParams.append('radius', 50);

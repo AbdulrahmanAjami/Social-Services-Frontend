@@ -83,7 +83,7 @@ const Register = () => {
     if (imageFile) formData.append('postImage', imageFile);
 
     const response = await axios.post(
-      'https://localhost:7244/api/Authentication/Register User',
+      'https://yousefalhamad-001-site1.ltempurl.com/api/Authentication/Register User',
       formData
     );
     console.log('✅ Success:', response.data);

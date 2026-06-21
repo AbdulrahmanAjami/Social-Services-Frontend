@@ -62,7 +62,7 @@ import { CardSkeleton } from './components/Skeleton';
 
 // Admin API with Bearer token
 
-const adminApi = axios.create({ baseURL: 'https://localhost:7244/api' });
+const adminApi = axios.create({ baseURL: 'https://yousefalhamad-001-site1.ltempurl.com/api' });
 
 adminApi.interceptors.request.use(config => {
 

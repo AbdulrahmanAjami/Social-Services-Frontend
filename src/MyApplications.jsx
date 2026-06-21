@@ -4,7 +4,7 @@ import { User, ArrowRight, Trash2, Clock, CheckCircle, XCircle, Home } from 'luc
 import { useAuth } from './AuthContext';
 import { CardSkeleton } from './components/Skeleton';
 
-const API_BASE_URL = 'https://localhost:7244/api';
+const API_BASE_URL = 'https://yousefalhamad-001-site1.ltempurl.com/api';
 
 const MyApplications = () => {
   const navigate = useNavigate();
