@@ -365,34 +365,53 @@ const Profile = () => {
   }, [activeTab]);
 
   // ── CRUD handlers (identical to original) ────────────────────────────────
-  const handleUpdate = async () => {
-    setError(''); setSuccess(''); setLoading(true);
-    try {
-      let imagePath = formData.imagepath;
-      if (imageFile) {
-        const ts = Date.now();
-        const ext = imageFile.name.split('.').pop();
-        const safe = user.username.replace(/[^a-zA-Z0-9]/g, '_');
-        imagePath = `${safe}_${ts}.${ext}`;
-      }
-      const requestBody = {
-        Username: user.username, FirstName: formData.firstName, SecondName: formData.secondName,
-        LastName: formData.lastName, Email: formData.email, Phone: formData.phone,
-        Age: parseInt(formData.age) || 0, ImagePath: imagePath,
-      };
-      const response = await fetch(`${API_BASE_URL}/User/UpdatePersonalDetails`, {
-        method: 'PATCH',
-        headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify(requestBody),
-      });
-      if (!response.ok) throw new Error('Failed to update profile');
-      setSuccess('تم تحديث الملف الشخصي بنجاح!');
-      setIsEditing(false);
-      updateUser({ ...user, ...formData, imagepath: imagePath });
-      setTimeout(() => setSuccess(''), 3000);
-    } catch (err) { setError('فشل تحديث الملف الشخصي: ' + err.message); }
-    finally { setLoading(false); }
-  };
+const handleUpdate = async () => {
+  setError(''); setSuccess(''); setLoading(true);
+  try {
+    const imageChanged = !!imageFile;
+
+    const data = {
+      Username: user.username,
+      FirstName: formData.firstName,
+      SecondName: formData.secondName,
+      LastName: formData.lastName,
+      Email: formData.email,
+      Phone: formData.phone,
+      Age: parseInt(formData.age) || 0,
+      Imagepath: formData.imagepath,
+    };
+
+    const form = new FormData();
+    // Append each text field individually using the "data.FieldName" naming the API expects
+    Object.entries(data).forEach(([key, value]) => {
+      form.append(`data.${key}`, value ?? '');
+    });
+    // Only attach the actual binary file if the user picked a new one
+    if (imageFile) {
+      form.append('Image', imageFile);
+    }
+
+    const response = await fetch(`${API_BASE_URL}/User/Update Personal Details?imageChanged=${imageChanged}`, {
+      method: 'PATCH',
+      headers: { Authorization: `Bearer ${accessToken}` },
+      // Note: no 'Content-Type' header here — the browser sets the correct
+      // multipart/form-data boundary automatically when sending a FormData body
+      body: form,
+    });
+
+    if (!response.ok) throw new Error('Failed to update profile');
+
+    setSuccess('تم تحديث الملف الشخصي بنجاح!');
+    setIsEditing(false);
+    updateUser({ ...user, ...formData });
+    setImageFile(null);
+    setTimeout(() => setSuccess(''), 3000);
+  } catch (err) {
+    setError('فشل تحديث الملف الشخصي: ' + err.message);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleDeletePost = async () => {
     if (!selectedPost) return;
