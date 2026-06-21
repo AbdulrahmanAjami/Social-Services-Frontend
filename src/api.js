@@ -1,7 +1,7 @@
 import axios from 'axios';
 // إنشاء axios instance مع base URL (مع /api)
 const api = axios.create({
-  baseURL: 'https://localhost:7244/api',
+  baseURL: 'https://yousefalhamad-001-site1.ltempurl.com/api',
   headers: {
     'Content-Type': 'application/json',
   },
@@ -9,7 +9,7 @@ const api = axios.create({
 
 // إنشاء axios instance بدون /api في الـ baseURL
 const apiBase = axios.create({
-  baseURL: 'https://localhost:7244',
+  baseURL: 'https://yousefalhamad-001-site1.ltempurl.com',
   headers: {
     'Content-Type': 'application/json',
   },

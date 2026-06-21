@@ -1,6 +1,6 @@
 export const POST_COMPLETED_EVENT = 'post-completed';
 
-export const API_ORIGIN = 'https://localhost:7244';
+export const API_ORIGIN = 'https://yousefalhamad-001-site1.ltempurl.com';
 
 export const DEFAULT_POST_IMAGE =
   'https://images.unsplash.com/photo-1559027615-cd99713b8bb7?w=800&q=80';
