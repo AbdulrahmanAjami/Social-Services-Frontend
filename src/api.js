@@ -206,13 +206,12 @@ createPost: (postData, config) =>
   deletePost: (postID) => 
     api.delete('/Posts/Delete Post', { params: { postID } }),
   
-  updatePost: (postIDOrPayload, postData) => {
-    const payload =
-      typeof postIDOrPayload === 'object' && postIDOrPayload !== null && postData === undefined
-        ? postIDOrPayload
-        : { postID: postIDOrPayload, ...postData };
-    return api.put('/Posts/Update Post', payload);
-  },
+updatePost: (formData, imageChanged = false) => {
+  return api.put('/Posts/Update Post', formData, {
+    params: { ImageChanged: imageChanged },
+    headers: { 'Content-Type': 'multipart/form-data' }
+  });
+},
   
   getUserPosts: (username) => 
     api.get('/Posts/Get User Posts Post', { params: { username } }),

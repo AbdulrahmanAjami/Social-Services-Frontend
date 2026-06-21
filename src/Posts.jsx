@@ -365,7 +365,7 @@ const handleUpdatePost = async (e) => {
     form.append('Data.PostTitle', formData.PostTitle);
     form.append('Data.Description', formData.Description);
     form.append('Data.CountyID', formData.CountyID);
-    
+    form.append('Data.ProfessionID', formData.ProfessionID);
     form.append('Data.imagePath', formData.imagePath || '');
     form.append('Data.Status', formData.Status);
     if (formData.Latitude) form.append('Data.Latitude', formData.Latitude);
@@ -382,7 +382,7 @@ for (let [key, value] of form.entries()) {
     alert('✅ تم تحديث المنشور بنجاح');
     setShowEditModal(false); 
     setEditingPost(null);
-    setFormData({ PostTitle:'', Description:'', TypeID:1, CountyID:3, imagePath:'', Status:1, Latitude:null, Longitude:null });
+    setFormData({ PostTitle:'', Description:'', TypeID:1, CountyID:3, ProfessionID:1, imagePath:'', Status:1, Latitude:null, Longitude:null });
     setSelectedCityForForm(null); 
     setSelectedLocation(null);
     await fetchFilteredPosts();
