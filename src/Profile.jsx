@@ -1508,193 +1508,76 @@ onClick={async () => {
       )}
 
       {/* ━━━━ EDIT POST MODAL ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
-      {(showCreateModal || showEditModal) && (
+      {showEditPostModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
           <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-3xl bg-white shadow-2xl">
-            {/* Modal header */}
-            <div className="sticky top-0 flex items-center justify-between rounded-t-3xl bg-emerald-600 px-6 py-4 text-white">
-              <h2 className="text-xl font-black">
-                {showEditModal ? 'تعديل المنشور' : 'إضافة منشور جديد'}
-              </h2>
-              <button onClick={resetForm} className="rounded-full p-2 transition hover:bg-white/20">
+            <div className="sticky top-0 flex items-center justify-between rounded-t-3xl bg-emerald-600 px-6 py-4">
+              <h2 className="text-lg font-black text-white">تعديل الخدمة</h2>
+              <button onClick={() => { setShowEditPostModal(false); setSelectedPost(null); setEditPostError(''); }}
+                className="flex size-9 items-center justify-center rounded-full bg-white/20 text-white transition hover:bg-white/30">
                 <X className="size-5" />
               </button>
             </div>
+            <form onSubmit={handleUpdatePost} className="space-y-5 p-6 md:p-8">
+              {editPostError && <Alert type="error">{editPostError}</Alert>}
 
-            {(loadingCities || loadingCounties) && (
-              <div className="border-b border-blue-100 bg-blue-50 px-6 py-2 text-center text-sm font-semibold text-blue-700">
-                {loadingCities && '⏳ جاري تحميل المدن...'}
-                {loadingCounties && '⏳ جاري تحميل المناطق...'}
-              </div>
-            )}
-
-            <form onSubmit={showEditModal ? handleUpdatePost : handleCreatePost} className="space-y-5 p-6">
-              {/* Title */}
-              <div>
-                <label className="mb-1.5 block text-sm font-bold text-slate-700">
-                  عنوان المنشور <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text" required
-                  value={formData.PostTitle}
-                  onChange={(e) => setFormData({ ...formData, PostTitle: e.target.value })}
-                  placeholder="أدخل العنوان"
-                  className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
-                />
-              </div>
-
-              {/* Description */}
-              <div>
-                <label className="mb-1.5 block text-sm font-bold text-slate-700">
-                  الوصف <span className="text-red-500">*</span>
-                </label>
-                <textarea
-                  required rows={4}
-                  value={formData.Description}
-                  onChange={(e) => setFormData({ ...formData, Description: e.target.value })}
-                  placeholder="أدخل الوصف"
-                  className="w-full resize-none rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
-                />
-              </div>
-
-              <div>
-  <label className="mb-1.5 block text-sm font-bold text-slate-700">
-    عدد المتطوعين المطلوبين <span className="text-red-500">*</span>
-  </label>
-  <input
-    type="number" required min={1} max={100}
-    value={formData.ServicesRequiredCount}
-    onChange={(e) => setFormData({ ...formData, ServicesRequiredCount: parseInt(e.target.value) })}
-    placeholder="أدخل عدد المتطوعين"
-    className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
-  />
-</div>
-
-              {/* Type + City */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="mb-1.5 block text-sm font-bold text-slate-700">نوع المنشور</label>
-                  <select
-                    value={formData.TypeID}
-                    onChange={(e) => setFormData({ ...formData, TypeID: parseInt(e.target.value) })}
-                    className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-emerald-400 cursor-pointer"
-                  >
-                    <option value="1">تطوعي</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="mb-1.5 block text-sm font-bold text-slate-700">المدينة</label>
-                  <select
-                    value={selectedCityForForm || ''}
-                    onChange={(e) => setSelectedCityForForm(e.target.value ? parseInt(e.target.value) : null)}
-                    disabled={cities.length === 0}
-                    className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-emerald-400 cursor-pointer disabled:bg-slate-50 disabled:cursor-not-allowed"
-                  >
-                    <option value="">-- اختر مدينة --</option>
-                    {cities.map(c => <option key={c.cityID} value={c.cityID}>{c.cityName}</option>)}
-                  </select>
-                </div>
-              </div>
-
-              {/* County */}
-              <div>
-                <label className="mb-1.5 block text-sm font-bold text-slate-700">
-                  المنطقة / المحافظة {selectedCityForForm && <span className="text-red-500">*</span>}
-                </label>
-                <select
-                  value={formData.CountyID}
-                  onChange={(e) => setFormData({ ...formData, CountyID: parseInt(e.target.value) })}
-                  disabled={!selectedCityForForm || filteredCounties.length === 0}
-                  className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-emerald-400 cursor-pointer disabled:bg-slate-50 disabled:cursor-not-allowed"
-                >
-                  {!selectedCityForForm ? (
-                    <option value="">-- اختر مدينة أولاً --</option>
-                  ) : filteredCounties.length === 0 ? (
-                    <option value="">لا توجد مناطق لهذه المدينة</option>
+              {[
+                { label: 'عنوان المنشور', key: 'postTitle', type: 'input', required: true },
+                { label: 'الوصف',          key: 'description', type: 'textarea', required: true },
+              ].map(({ label, key, type, required }) => (
+                <div key={key}>
+                  <label className="mb-1.5 block text-sm font-bold text-slate-700">
+                    {label} {required && <span className="text-red-500">*</span>}
+                  </label>
+                  {type === 'textarea' ? (
+                    <textarea value={postFormData[key]} required rows={4}
+                      onChange={(e) => setPostFormData({ ...postFormData, [key]: e.target.value })}
+                      className={`${INPUT} resize-none`} />
                   ) : (
-                    <>
-                      <option value="">-- اختر منطقة --</option>
-                      {filteredCounties.map(c => <option key={c.countyID} value={c.countyID}>{c.countyName}</option>)}
-                    </>
+                    <input type="text" value={postFormData[key]} required
+                      onChange={(e) => setPostFormData({ ...postFormData, [key]: e.target.value })}
+                      className={INPUT} />
                   )}
+                </div>
+              ))}
+
+              <div>
+                <label className="mb-1.5 block text-sm font-bold text-slate-700">المنطقة <span className="text-red-500">*</span></label>
+                <select value={postFormData.countyID} required disabled={loadingCounties}
+                  onChange={(e) => setPostFormData({ ...postFormData, countyID: e.target.value })}
+                  className={`${INPUT} cursor-pointer`}>
+                  <option value="">{loadingCounties ? 'جاري التحميل...' : '-- اختر المنطقة --'}</option>
+                  {counties.map(c => <option key={c.countyID} value={c.countyID}>{c.countyName}</option>)}
                 </select>
               </div>
 
-              {/* Profession */}
               <div>
-<select
-  value={formData.ProfessionID}
-  onChange={(e) => setFormData({ ...formData, ProfessionID: Number(e.target.value) })}
-  className="..."
->
-  <option value="">اختر المهنة</option>
-  
-{professions.map((p) => (
-  <option key={p.professionID} value={p.professionID} style={{color: '#1e293b', backgroundColor: 'white'}}>
-    {p.professionTitle}
-  </option>
-))}
-</select>
-              </div>
-
-              {/* Location */}
-              <div>
-                <button
-                  type="button" onClick={openLocationModal}
-                  className="w-full rounded-2xl border-2 border-dashed border-emerald-300 py-3 text-sm font-bold text-emerald-700 transition hover:border-emerald-500 hover:bg-emerald-50"
-                >
-                  <MapPin className="mr-1 inline size-4" /> تحديد الموقع على الخريطة
-                </button>
-                {formData.Latitude != null && (
-                  <p className="mt-1.5 text-xs font-semibold text-emerald-700">
-                    ✅ تم تحديد الموقع ({formData.Latitude.toFixed(5)}, {formData.Longitude.toFixed(5)})
-                  </p>
-                )}
-              </div>
-
-              {/* Image */}
-              <div>
-                <label className="mb-1.5 block text-sm font-bold text-slate-700">صورة المنشور (اختياري)</label>
-                <input
-                  type="file" accept="image/*"
-                  onChange={handleImageFileChange} disabled={imageUploading}
-                  className="w-full rounded-2xl border border-slate-200 px-4 py-2.5 text-sm file:mr-4 file:rounded-lg file:border-0 file:bg-emerald-50 file:px-3 file:py-1.5 file:text-xs file:font-bold file:text-emerald-700 hover:file:bg-emerald-100 disabled:opacity-50"
-                />
-                {imageUploading && <p className="mt-1 text-xs text-slate-500">⏳ جاري تحضير الصورة...</p>}
+                <label className="mb-1.5 block text-sm font-bold text-slate-700">صورة المنشور</label>
+                <input type="file" accept="image/*" onChange={handlePostImageFileChange} disabled={postImageUploading}
+                  className="w-full rounded-2xl border border-slate-200 px-4 py-2.5 text-sm file:mr-4 file:rounded-lg file:border-0 file:bg-emerald-50 file:px-3 file:py-1.5 file:text-xs file:font-bold file:text-emerald-700 hover:file:bg-emerald-100 disabled:opacity-50" />
+                {postImageUploading && <p className="mt-1 text-xs text-slate-400">⏳ جاري تحضير الصورة...</p>}
                 <label className="mb-1 mt-3 block text-xs text-slate-500">أو رابط من الإنترنت</label>
-                <input
-                  type="url"
-                  value={formData.imagePath.startsWith('data:') ? '' : formData.imagePath}
-                  onChange={(e) => setFormData({ ...formData, imagePath: e.target.value })}
-                  placeholder="https://example.com/image.jpg"
-                  className="w-full rounded-2xl border border-slate-200 px-4 py-2.5 text-sm outline-none transition focus:border-emerald-400"
-                />
-                {formData.imagePath && (
-                  <div className="mt-3">
-                    <img
-                      src={getImagePreviewUrl(formData.imagePath)} alt="معاينة"
-                      className="h-40 w-full rounded-2xl object-cover"
-                      onError={(e) => { e.target.style.display = 'none'; }}
-                    />
-                    <button type="button" onClick={() => setFormData({ ...formData, imagePath: '' })}
-                      className="mt-1.5 text-xs text-red-500 hover:text-red-700">
-                      إزالة الصورة
-                    </button>
-                  </div>
+                <input type="url" value={postFormData.imagePath.startsWith('data:') ? '' : postFormData.imagePath}
+                  onChange={(e) => setPostFormData({ ...postFormData, imagePath: e.target.value })}
+                  placeholder="https://example.com/image.jpg" className={INPUT} />
+                {postFormData.imagePath && (
+                  <>
+                    <img src={getImagePreviewUrl(postFormData.imagePath)} alt="معاينة"
+                      className="mt-3 h-40 w-full rounded-2xl object-cover"
+                      onError={(e) => { e.target.style.display = 'none'; }} />
+                    <button type="button" onClick={() => setPostFormData({ ...postFormData, imagePath: '' })}
+                      className="mt-1.5 text-xs text-red-500 hover:text-red-700">إزالة الصورة</button>
+                  </>
                 )}
               </div>
 
-              {/* Actions */}
               <div className="flex gap-3 border-t border-slate-100 pt-4">
-                <button
-                  type="submit" disabled={loading}
-                  className="flex-1 rounded-2xl bg-emerald-600 py-3 font-bold text-white transition hover:bg-emerald-700 disabled:opacity-50"
-                >
-                  {loading ? '⏳ جاري...' : showEditModal ? 'تحديث' : 'إنشاء'}
+                <button type="submit" disabled={loading || loadingCounties}
+                  className="flex-1 rounded-2xl bg-emerald-600 py-3 font-bold text-white transition hover:bg-emerald-700 disabled:opacity-50">
+                  {loading ? 'جاري الحفظ...' : 'حفظ التعديلات'}
                 </button>
-                <button type="button" onClick={resetForm}
-                  className="flex-1 rounded-2xl bg-slate-100 py-3 font-bold text-slate-700 transition hover:bg-slate-200"
-                >
+                <button type="button" onClick={() => { setShowEditPostModal(false); setSelectedPost(null); setEditPostError(''); }} disabled={loading}
+                  className="flex-1 rounded-2xl bg-slate-100 py-3 font-bold text-slate-700 transition hover:bg-slate-200 disabled:opacity-50">
                   إلغاء
                 </button>
               </div>
