@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   HeartHandshake, Home, Mail, Phone, MapPin, Send,
-  Facebook, Instagram, Linkedin, MessageCircle,
+  MessageCircle,
   CheckCircle, AlertCircle, ArrowLeft,
 } from 'lucide-react';
 import { ButtonSkeleton } from './components/Skeleton';
@@ -52,11 +52,7 @@ const Contact = () => {
     { icon: MapPin, title: 'العنوان',             value: 'عمّان، الأردن',       link: 'https://maps.google.com',    color: 'from-cyan-500 to-blue-600',    bg: 'bg-cyan-50',    text: 'text-cyan-600'    },
   ];
 
-  const socialMedia = [
-    { name: 'Facebook',  icon: Facebook,  link: 'https://facebook.com',  color: 'from-blue-500 to-blue-600',   username: '@participate' },
-    { name: 'Instagram', icon: Instagram, link: 'https://instagram.com', color: 'from-pink-500 to-purple-600', username: '@participate' },
-    { name: 'LinkedIn',  icon: Linkedin,  link: 'https://linkedin.com',  color: 'from-blue-600 to-blue-700',   username: '@participate' },
-  ];
+
 
   // ══════════════════════════════════════════════════════════════════════════
   // RENDER
