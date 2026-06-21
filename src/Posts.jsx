@@ -376,7 +376,6 @@ for (let [key, value] of form.entries()) {
 }
     await api.put('/Posts/Update Post', form, {
       params: { ImageChanged: false },
-      headers: { 'Content-Type': 'multipart/form-data' }
     });
 
     alert('✅ تم تحديث المنشور بنجاح');
