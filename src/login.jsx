@@ -52,13 +52,15 @@ const Login = () => {
     const payload = JSON.parse(atob(data.accessToken.split('.')[1]));
 const userID = parseInt(payload["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"]);
 
-    const userData = {
-     name: data.user?.name || data.user?.username || data.name || data.username || formData.username,
-      email: data.user?.email || data.email,
-    username: data.user?.username || data.username || formData.username,
+const userData = {
+  name: data.user?.name || data.user?.username || data.name || data.username || formData.username,
+  email: data.user?.email || data.email,
+  username: data.user?.username || data.username || formData.username,
   profilePicture: data.user?.profilePicture || data.profilePicture || null,
   id: data.user?.id || data.id,
-  userID: userID
+  userID: userID,
+  isActive: data.user?.isActive ?? data.isActive,
+  creationDate: data.user?.creationDate || data.creationDate,
 };
 
       console.log('Saved User Data:', userData);
