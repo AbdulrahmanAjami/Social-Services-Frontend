@@ -467,9 +467,12 @@ setAiRecommendations(recommended);
     setIsVolunteer(false);
     setVolunteerAppID(null);
     alert('✅ تم حذف الطلب بنجاح');
-  } catch (err) {
-    alert('❌ ' + (err.response?.data?.message || err.message));
-  }
+
+  } catch (error) {
+  console.log('Volunteer error status:', error.response?.status);
+  console.log('Volunteer error data:', error.response?.data);
+  setIsVolunteer(false);
+}
 };
 
 const handleCardClick = async (service) => {
