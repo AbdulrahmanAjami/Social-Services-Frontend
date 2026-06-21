@@ -1191,7 +1191,7 @@ onClick={async () => {
                         </span>
                         <div>
                           <p className="text-xs font-semibold text-slate-400">حالة الحساب</p>
-                          <p className="font-bold text-emerald-700">{user?.isActive ? 'نشط ✓' : 'غير نشط'}</p>
+                          <p className="font-bold text-emerald-700">{user?.isActive === 1 ? 'نشط ✓' : 'غير نشط'}</p>
                         </div>
                       </div>
                     </div>
