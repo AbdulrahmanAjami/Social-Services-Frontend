@@ -790,10 +790,10 @@ const handleLogout = () => { logout(); setUserMenuOpen(false); navigate('/'); };
           className={`px-4 py-2.5 text-sm cursor-pointer transition-colors ${
             selectedProfessionID === p.professionID
               ? 'bg-emerald-50 text-emerald-700 font-semibold'
-              : 'text-slate-700 hover:bg-slate-50'
+              : 'text-slate-900 hover:bg-slate-50'
           }`}
         >
-          {p.title}
+          {p.professionTitle}
         </div>
       ))}
     </div>
