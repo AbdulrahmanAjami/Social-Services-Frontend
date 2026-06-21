@@ -247,7 +247,7 @@ export const servicesAPI = {
     api.get('/Services/Get Service Applications for User', { params: { username } }),
   
   acceptService: (applicationID, message = null) => 
-    api.post(`/Services/Accept Service?serviceApplicationID=${applicationID}&AcceptanceMessage=${encodeURIComponent(message || '')}`),
+    api.post(`/Services/Respond To Service Application?serviceApplicationID=${applicationID}&AcceptanceMessage=${encodeURIComponent(message || '')}`),
   
   rejectService: (applicationID, message = null) => 
     api.post(`/Services/Reject Service?serviceApplicationID=${applicationID}&AcceptanceMessage=${encodeURIComponent(message || '')}`),
