@@ -474,7 +474,7 @@ const Mainpage = () => {
                   ))}
                 </div>
                 <p className="text-sm font-medium text-slate-500">
-                  انضم إلى <span className="font-bold text-slate-800">+500 متطوّع</span> صنعوا الفرق
+                  انضم إلى <span className="font-bold text-slate-800">+50 متطوّع</span> صنعوا الفرق
                 </p>
               </div>
             </Reveal>
