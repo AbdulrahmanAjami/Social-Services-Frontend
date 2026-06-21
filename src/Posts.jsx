@@ -527,7 +527,7 @@ const handleLogout = () => { logout(); setUserMenuOpen(false); navigate('/'); };
     onEdit: openEditModal,
     onDelete: (id) => { setDeletingPostId(id); setShowConfirmDelete(true); },
     onCardClick: handleCardClick,
-    isOwner: isLoggedIn && post.authorName === user?.username,
+    isOwner: isLoggedIn && post.userID === user?.userID,
     isLoggedIn,
     currentUser: user,
     onApplyClick: (p) => {
@@ -720,7 +720,7 @@ const handleLogout = () => { logout(); setUserMenuOpen(false); navigate('/'); };
             <div className="flex items-center gap-2 flex-wrap">
               {[
                 { id: 'all', label: `جميع المنشورات (${posts.length})` },
-                { id: 'voluntary', label: 'تطوعية' },
+                
               ].map(tab => (
                 <button
                   key={tab.id}
