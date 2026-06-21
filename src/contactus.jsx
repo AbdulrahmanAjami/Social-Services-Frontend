@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   HeartHandshake, Home, Mail, Phone, MapPin, Send,
-  Facebook, Instagram, Linkedin, MessageCircle,
+  MessageCircle,
   CheckCircle, AlertCircle, ArrowLeft,
 } from 'lucide-react';
 import { ButtonSkeleton } from './components/Skeleton';
@@ -48,11 +48,6 @@ const Contact = () => {
     { icon: MapPin, title: 'العنوان',            value: 'عمّان، الأردن',        link: 'https://maps.google.com',    color: 'from-cyan-500 to-blue-600'    },
   ];
 
-  const socialMedia = [
-    { name: 'Facebook',  icon: Facebook,  link: 'https://facebook.com',  color: 'from-blue-500 to-blue-600',   username: '@participate' },
-    { name: 'Instagram', icon: Instagram, link: 'https://instagram.com', color: 'from-pink-500 to-purple-600', username: '@participate' },
-    { name: 'LinkedIn',  icon: Linkedin,  link: 'https://linkedin.com',  color: 'from-blue-600 to-blue-700',   username: '@participate' },
-  ];
 
   return (
     <div className="min-h-screen bg-white" dir="rtl">
@@ -182,33 +177,6 @@ const Contact = () => {
               );
             })}
 
-            {/* Social media */}
-            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6 shadow-xl">
-              <div className="pointer-events-none absolute inset-0 overflow-hidden opacity-15">
-                <div className="absolute -right-10 -top-10 size-40 rounded-full bg-emerald-500 blur-3xl" />
-                <div className="absolute -bottom-10 -left-10 size-40 rounded-full bg-teal-500 blur-3xl" />
-              </div>
-              <div className="relative z-10">
-                <h3 className="mb-5 text-lg font-black text-white">تابعنا على</h3>
-                <div className="flex flex-col gap-3">
-                  {socialMedia.map((social, i) => {
-                    const Icon = social.icon;
-                    return (
-                      <a key={i} href={social.link} target="_blank" rel="noopener noreferrer"
-                        className="group flex items-center gap-4 rounded-2xl bg-white/10 p-4 backdrop-blur-sm transition hover:bg-white/20">
-                        <span className={`flex size-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ${social.color} shadow-lg transition-transform duration-300 group-hover:scale-110`}>
-                          <Icon className="size-6 text-white" strokeWidth={2} />
-                        </span>
-                        <div>
-                          <p className="font-extrabold text-white">{social.name}</p>
-                          <p className="text-xs font-semibold text-slate-400">{social.username}</p>
-                        </div>
-                      </a>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
 
             {/* Response time */}
             <div className="flex items-start gap-4 rounded-3xl border border-amber-100 bg-amber-50 p-5">
