@@ -121,6 +121,7 @@ function Posts() {
   // Volunteer
   const [isVolunteer, setIsVolunteer]             = useState(false);
   const [volunteerLoading, setVolunteerLoading]   = useState(false);
+  const [volunteerAppID, setVolunteerAppID] = useState(null);
 
   // Custom dropdowns
   const [professionDropdownOpen, setProfessionDropdownOpen] = useState(false);
@@ -168,6 +169,8 @@ useEffect(() => { fetchCities(); fetchCounties(); fetchProfessions(); }, []);  u
           params: { userID: user?.userID }
         });
         setIsVolunteer(true);
+        setVolunteerAppID(response.data?.volunteerApplicationID);
+
       } catch (error) {
         // If 404 or error, user is not a volunteer
         setIsVolunteer(false);
@@ -455,6 +458,20 @@ setAiRecommendations(recommended);
     } finally { setAiLoading(false); }
   };
 
+  const handleDeleteVolunteerApp = async () => {
+  if (!window.confirm('هل أنت متأكد من حذف طلب التطوع؟')) return;
+  try {
+    await api.delete('/Volunteer/Delete Volunteer Application', {
+      params: { appID: volunteerAppID }
+    });
+    setIsVolunteer(false);
+    setVolunteerAppID(null);
+    alert('✅ تم حذف الطلب بنجاح');
+  } catch (err) {
+    alert('❌ ' + (err.response?.data?.message || err.message));
+  }
+};
+
 const handleCardClick = async (service) => {
 
   console.log('professions list:', professions);
@@ -659,6 +676,21 @@ const handleLogout = () => { logout(); setUserMenuOpen(false); navigate('/'); };
               </div>
             </div>
           )}
+
+          {isLoggedIn && !volunteerLoading && !isVolunteer && volunteerAppID && (
+  <div className="mb-8 rounded-2xl bg-red-50 border-2 border-red-200 p-6">
+    <div className="flex items-center justify-between">
+      <p className="font-bold text-slate-800">طلب التطوع قيد المراجعة</p>
+      <button
+        onClick={handleDeleteVolunteerApp}
+        className="flex items-center gap-2 rounded-full bg-red-500 px-6 py-2.5 text-sm font-bold text-white hover:bg-red-600"
+      >
+        <Trash2 className="size-4" />
+        حذف الطلب
+      </button>
+    </div>
+  </div>
+)}
 
           <Reveal className="flex flex-col items-center gap-4 text-center">
             <span className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-4 py-1.5 text-sm font-bold text-emerald-700">
