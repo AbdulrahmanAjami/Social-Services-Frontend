@@ -274,7 +274,7 @@ setAppliedServices(services.map(s => {
         params: { serviceApplicationID }
       });
       // Remove the cancelled application from the list
-      setAppliedServices(prev => prev.filter(s => s.serviceApplicationID !== serviceApplicationID));
+setAppliedServices(prev => prev.filter(s => s.applicationID !== serviceApplicationID));
       alert('✅ تم إلغاء التقديم بنجاح');
     } catch (err) {
       alert('❌ ' + (err.response?.data?.message || err.message || 'فشل في إلغاء التقديم'));
@@ -1437,10 +1437,13 @@ onClick={async () => {
                         <div className="flex flex-col gap-2 min-w-[150px]">
                           {a.status === 'pending' ? (
                             <>
-                              <button onClick={() => handleAcceptApplicant(a.id)} disabled={loading}
-                                className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 py-2.5 text-sm font-bold text-white transition hover:bg-emerald-700 disabled:opacity-50">
-                                <UserCheck className="size-4" /> قبول
-                              </button>
+                        <button
+                             onClick={() => handleCancelApplication(s.applicationID)}
+                             disabled={loading}
+                             className="inline-flex items-center gap-2 rounded-xl bg-red-50 px-4 py-2 text-sm font-bold text-red-600 transition hover:bg-red-100 disabled:opacity-50"
+                        >
+                            <XCircle className="size-4" /> إلغاء التقديم
+</button>
                               <button onClick={() => handleRejectApplicant(a.id)} disabled={loading}
                                 className="inline-flex items-center justify-center gap-2 rounded-xl bg-red-500 py-2.5 text-sm font-bold text-white transition hover:bg-red-600 disabled:opacity-50">
                                 <UserX className="size-4" /> رفض
