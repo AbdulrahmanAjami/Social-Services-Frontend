@@ -353,21 +353,42 @@ await fetchFilteredPosts();
   } finally { setLoading(false); }
 };
 
-  const handleUpdatePost = async (e) => {
-    e.preventDefault();
-    if (!editingPost) return;
-    try {
-      setLoading(true);
-      await postsAPI.updatePost(editingPost.postID, formData);
-      alert('✅ تم تحديث المنشور بنجاح');
-      setShowEditModal(false); setEditingPost(null);
-      setFormData({ PostTitle:'',Description:'',TypeID:1,CountyID:3,ProfessionID:1,imagePath:'',Status:1,Latitude:null,Longitude:null });
-      setSelectedCityForForm(null); setSelectedLocation(null);
-      await fetchFilteredPosts();
-    } catch (err) {
-      alert('❌ فشل في تحديث المنشور: ' + (err.response?.data?.message || err.message));
-    } finally { setLoading(false); }
-  };
+const handleUpdatePost = async (e) => {
+  e.preventDefault();
+  if (!editingPost) return;
+  try {
+    setLoading(true);
+    
+    const form = new FormData();
+    form.append('Data.PostID', editingPost.postID);
+    form.append('Data.UserID', user?.userID);
+    form.append('Data.PostTitle', formData.PostTitle);
+    form.append('Data.Description', formData.Description);
+    form.append('Data.CountyID', formData.CountyID);
+    form.append('Data.ProfessionID', formData.ProfessionID);
+    form.append('Data.imagePath', formData.imagePath || '');
+    form.append('Data.Status', formData.Status);
+    if (formData.Latitude) form.append('Data.Latitude', formData.Latitude);
+    if (formData.Longitude) form.append('Data.Longitude', formData.Longitude);
+
+    await api.put('/Posts/Update Post', form, {
+      params: { ImageChanged: false },
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+
+    alert('✅ تم تحديث المنشور بنجاح');
+    setShowEditModal(false); 
+    setEditingPost(null);
+    setFormData({ PostTitle:'', Description:'', TypeID:1, CountyID:3, ProfessionID:1, imagePath:'', Status:1, Latitude:null, Longitude:null });
+    setSelectedCityForForm(null); 
+    setSelectedLocation(null);
+    await fetchFilteredPosts();
+  } catch (err) {
+    alert('❌ فشل في تحديث المنشور: ' + (err.response?.data?.message || err.message));
+  } finally { 
+    setLoading(false); 
+  }
+};
 
   const handleDeletePost = async () => {
     if (!deletingPostId) return;
