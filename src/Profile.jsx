@@ -237,23 +237,29 @@ const Profile = () => {
         return isNaN(date.getTime()) ? 'غير متوفر' : date.toLocaleDateString('ar-JO');
       };
 
-      setAppliedServices(services.map(s => {
-        const postDetails = allPosts[s.postID] || {};
-        let status = 'pending';
-        if (s.accepted === true) status = 'accepted';
-        else if (s.accepted === false) status = 'rejected';
-        else if (s.status) status = s.status.toLowerCase();
-        return {
-          id: s.applicationID,
-          serviceName: postDetails.postTitle || s.postTitle || 'خدمة بدون عنوان',
-          authorName: postDetails.authorName || 'صاحب الخدمة',
-          status,
-          appliedDate: parseDate(s.applicationDateTime || s.applicationDate),
-          description: s.description,
-          message: s.acceptanceMessage || s.message || s.responseMessage || s.serviceResponse || null,
-          postID: s.postID, applicationID: s.applicationID,
-        };
-      }));
+setAppliedServices(services.map(s => {
+  const postDetails = allPosts[s.postID] || {};
+
+  // Map the numeric status code coming from the backend to the string values
+  // the rest of the UI (StatusBadge, filters, etc.) expects.
+  // Backend: 1 = Pending, 2 = Rejected, 3 = Accepted
+  let status = 'pending';
+  if (s.status === 3) status = 'accepted';
+  else if (s.status === 2) status = 'rejected';
+  else if (s.status === 1) status = 'pending';
+
+  return {
+    id: s.serviceApplicationID,
+    serviceName: postDetails.postTitle || s.postTitle || 'خدمة بدون عنوان',
+    authorName: postDetails.authorName || 'صاحب الخدمة',
+    status,
+    appliedDate: parseDate(s.applyDateTime || s.applicationDateTime || s.applicationDate),
+    description: s.description,
+    message: s.acceptanceMessage || s.message || s.responseMessage || s.serviceResponse || null,
+    postID: s.postID,
+    applicationID: s.serviceApplicationID,
+  };
+}));
     } catch (err) {
       setAppliedServicesError(err.response?.data?.message || err.message || 'فشل في جلب الخدمات المقدم عليها');
       setAppliedServices([]);
