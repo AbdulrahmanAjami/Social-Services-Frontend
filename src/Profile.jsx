@@ -219,6 +219,7 @@ const Profile = () => {
     finally { setPostsLoading(false); }
   };
 
+  console.log('user object:', user);
   const fetchAppliedServices = async () => {
     if (!user?.username || !accessToken) return;
     setAppliedServicesLoading(true); setAppliedServicesError('');
