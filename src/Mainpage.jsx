@@ -446,7 +446,7 @@ const Mainpage = () => {
             <Reveal delay={300}>
               <div className="flex flex-wrap items-center gap-3">
                 <button
-                  onClick={() => handleNavigation('/register')}
+                  onClick={() => handleNavigation('/posts')}
                   className="group inline-flex items-center gap-2 rounded-full bg-amber-500 px-7 py-3 text-base font-bold text-white transition-all hover:bg-amber-600 hover:shadow-lg hover:shadow-amber-500/30"
                 >
                   ابدأ التطوّع الآن
