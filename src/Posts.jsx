@@ -771,15 +771,15 @@ const handleLogout = () => { logout(); setUserMenuOpen(false); navigate('/'); };
   
   {professionDropdownOpen && (
     <div className="absolute top-full left-0 right-0 mt-1 z-50 rounded-2xl border border-slate-200 bg-white shadow-lg max-h-60 overflow-y-auto">
-      <div
-        onClick={() => {
-          setSelectedProfessionID('');
-          setProfessionDropdownOpen(false);
-        }}
-        className="px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 cursor-pointer transition-colors"
-      >
-        جميع المهن
-      </div>
+<div
+  onClick={() => {
+    setSelectedProfessionID('');
+    setProfessionDropdownOpen(false);
+  }}
+  className="px-4 py-2.5 text-sm text-slate-900 hover:bg-slate-50 cursor-pointer transition-colors bg-white"
+>
+  جميع المهن
+</div>
       {professions.map((p) => (
         <div
           key={p.professionID}

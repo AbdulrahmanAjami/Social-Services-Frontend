@@ -447,7 +447,7 @@ const Profile = () => {
       setShowCompleteModal(false);
       setShowFeedbackModal(true);
     } catch (err) {
-      const msg = err.response?.data?.message || (typeof err.response?.data === 'string' ? err.response.data : null) || err.message || 'فشل في إكمال الخدمة';
+      const msg = err.response?.data?.message || (typeof err.response?.data === 'string' ? err.response.data : null) || err.message || 'فشل في إتمام الخدمة';
       setCompleteError(msg); setError('❌ ' + msg); setTimeout(() => setError(''), 5000);
     } finally { setLoading(false); }
   };
@@ -469,7 +469,7 @@ const Profile = () => {
       setShowFeedbackModal(false);
       setSelectedPost(null);
       setFeedbackRatings({});
-      setSuccess('✅ تم إكمال الخدمة وإرسال التقييمات بنجاح');
+      setSuccess('✅ تم إتمام الخدمة وإرسال التقييمات بنجاح');
       setTimeout(() => setSuccess(''), 3000);
 } catch (err) {
   console.error('Feedback error:', err.response?.data);
@@ -1256,7 +1256,7 @@ onClick={async () => {
                               {!isPostComplete(post) && !isPostLocked(post) && (
                                 <button onClick={() => openCompleteModal(post)} disabled={loading}
                                   className="w-full rounded-xl bg-teal-50 py-2 text-xs font-bold text-teal-700 transition hover:bg-teal-100">
-                                  <CheckCircle className="mr-1 inline size-3.5" /> إكمال الخدمة
+                                  <CheckCircle className="mr-1 inline size-3.5" /> إتمام الخدمة
                                 </button>
                               )}
                               <div className="flex gap-2">
@@ -1593,7 +1593,7 @@ onClick={async () => {
             <div className="mx-auto mb-5 flex size-16 items-center justify-center rounded-full bg-emerald-100">
               <CheckCircle className="size-8 text-emerald-600" />
             </div>
-            <h2 className="mb-2 text-xl font-black text-slate-800">إكمال الخدمة</h2>
+            <h2 className="mb-2 text-xl font-black text-slate-800">إتمام الخدمة</h2>
             <p className="mb-1 text-slate-500">هل أنت متأكد أن الخدمة اكتملت؟</p>
             <p className="mb-3 font-bold text-emerald-700">"{selectedPost.postTitle}"</p>
             <p className="mb-6 text-sm text-slate-400">بعد الإكمال لن يتمكن المتطوعون من التقديم على هذه الخدمة.</p>
