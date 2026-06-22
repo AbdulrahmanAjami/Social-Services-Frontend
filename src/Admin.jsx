@@ -738,9 +738,15 @@ const fetchVolunteerApplications = async () => {
         if (postsFilter === 'active' && post.isLocked) return false;
         if (postsFilter === 'locked' && !post.isLocked) return false;
       }
+      
+      const searchUpdate = postsSearch.toLowerCase().trim();
+
       return (
-        post.createdBy?.toLowerCase().includes(postsSearch.toLowerCase()) ||
-        post.userId?.toString().toLowerCase().includes(postsSearch.toLowerCase()) || 
+        post.title?.toLowerCase().includes(searchUpdate) ||
+        post.description?.toLowerCase().includes(searchUpdate) ||
+        post.createdBy?.toLowerCase().includes(searchUpdate) ||
+        post.id?.toString().includes(searchUpdate) ||
+        post.userId?.toString().includes(searchUpdate) 
       );
     })
 
