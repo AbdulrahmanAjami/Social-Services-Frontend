@@ -21,62 +21,78 @@ const Login = () => {
   const [success, setSuccess]           = useState(false);
 
   // ── handleSubmit identical to original ───────────────────────────────────
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setError('');
+  setLoading(true);
 
-    try {
-      const response = await fetch(`${API_BASE_URL}/Authentication/Login User`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: formData.username, password: formData.password }),
-      });
+  try {
+    const response = await fetch(`${API_BASE_URL}/Authentication/Login User`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: formData.username, password: formData.password }),
+    });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(errorText || 'Invalid username or password');
-      }
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(errorText || 'Invalid username or password');
+    }
 
-      const data = await response.json();
-      console.log('API Response:', data);
+    const data = await response.json();
+    console.log('API Response:', data);
 
-      const isActive = data.user?.isActive ?? data.isActive;
-      if (isActive === 0) {
-        setError('حسابك محظور حالياً. تواصل مع الإدارة لمزيد من المعلومات.');
-        setLoading(false);
-        setTimeout(() => navigate('/blocked'), 2000);
-        return;
-      }
+    const isActive = data.user?.isActive ?? data.isActive;
+    if (isActive === 0) {
+      setError('حسابك محظور حالياً. تواصل مع الإدارة لمزيد من المعلومات.');
+      setLoading(false);
+      setTimeout(() => navigate('/blocked'), 2000);
+      return;
+    }
 
     const payload = JSON.parse(atob(data.accessToken.split('.')[1]));
-const userID = parseInt(payload["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"]);
+    const userID = parseInt(payload["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"]);
 
-const userData = {
-  name: data.user?.name || data.user?.username || data.name || data.username || formData.username,
-  email: data.user?.email || data.email,
-  username: data.user?.username || data.username || formData.username,
-  profilePicture: data.user?.profilePicture || data.profilePicture || null,
-  id: data.user?.id || data.id,
-  userID: userID,
-  isActive: data.user?.isActive ?? data.isActive,
-  creationDate: data.user?.creationDate || data.creationDate,
-};
+    const userData = {
+      name: data.user?.name || data.user?.username || data.name || data.username || formData.username,
+      email: data.user?.email || data.email,
+      username: data.user?.username || data.username || formData.username,
+      profilePicture: data.user?.profilePicture || data.profilePicture || null,
+      id: data.user?.id || data.id,
+      userID: userID,
+      isActive: data.user?.isActive ?? data.isActive,
+      creationDate: data.user?.creationDate || data.creationDate,
+    };
 
-      console.log('Saved User Data:', userData);
-      login(userData, { accessToken: data.accessToken, refreshToken: data.refreshToken });
+    console.log('Saved User Data:', userData);
+    login(userData, { accessToken: data.accessToken, refreshToken: data.refreshToken });
 
-      setSuccess(true);
-      setTimeout(() => {
-        if (!window.location.pathname.startsWith('/admin')) navigate('/');
-      }, 1500);
-    } catch (err) {
-      console.error('Login Error:', err);
-      setError(err.message || 'فشل تسجيل الدخول. حاول مرة أخرى.');
-    } finally {
-      setLoading(false);
+    // جيب بيانات المستخدم الكاملة
+    try {
+      const userResponse = await fetch(`${API_BASE_URL}/User/Get User?username=${formData.username}&userID=-1`, {
+        headers: { Authorization: `Bearer ${data.accessToken}` }
+      });
+      const fullUser = await userResponse.json();
+      const updatedUser = {
+        ...userData,
+        isActive: fullUser.isActive,
+        creationDate: fullUser.creationDate,
+      };
+      login(updatedUser, { accessToken: data.accessToken, refreshToken: data.refreshToken });
+    } catch (e) {
+      console.error('Failed to fetch full user data:', e);
     }
-  };
+
+    setSuccess(true);
+    setTimeout(() => {
+      if (!window.location.pathname.startsWith('/admin')) navigate('/');
+    }, 1500);
+  } catch (err) {
+    console.error('Login Error:', err);
+    setError(err.message || 'فشل تسجيل الدخول. حاول مرة أخرى.');
+  } finally {
+    setLoading(false);
+  }
+};
 
   // ══════════════════════════════════════════════════════════════════════════
   // RENDER
