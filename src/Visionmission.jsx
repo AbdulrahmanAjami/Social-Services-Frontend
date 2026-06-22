@@ -273,7 +273,7 @@ const VisionMission = () => {
               انضم إلى مئات المتطوعين وابدأ في إحداث فرق إيجابي حقيقي في مجتمعك
             </p>
             <div className="flex flex-wrap items-center justify-center gap-3">
-              <button onClick={() => navigate('/register')}
+              <button onClick={() => navigate('/posts')}
                 className="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-7 py-3 font-bold text-white transition hover:bg-emerald-700 hover:shadow-lg hover:shadow-emerald-600/20">
                 ابدأ التطوع الآن
                 <ArrowLeft className="size-4 transition-transform group-hover:-translate-x-1" />

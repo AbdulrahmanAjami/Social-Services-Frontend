@@ -345,23 +345,15 @@ const getAdminIdFromToken = () => {
       const postsResponse = await adminApi.get('/Posts/Get All Posts');
 
       const realPosts = (postsResponse.data || []).map((post) => ({
-
         id: post.postID,
-
         title: post.postTitle,
-
         description: post.description,
-
         createdBy: post.authorName,
-
+        userID: post.userID,        
         createdDate: post.publishDateTime,
-
         isLocked: post.status === 0,
-
         status: post.status === 1 ? 'Active' : 'Completed',
-
         feedbackCount: 0,
-
       }));
 
       setPosts(realPosts);
@@ -1004,6 +996,10 @@ const fetchVolunteerApplications = async () => {
               <tr>
 
                 <th className="px-6 py-3 text-right text-gray-700 font-semibold">
+                    المستخدم
+                </th>
+
+                <th className="px-6 py-3 text-right text-gray-700 font-semibold">
 
                   العنوان
 
@@ -1044,6 +1040,10 @@ const fetchVolunteerApplications = async () => {
                 currentPostsPage.map((post) => (
 
                   <tr key={post.id} className="hover:bg-gray-50">
+
+                    <td className="px-6 py-4 text-gray-700">
+                      {post.userID || '-'}
+                    </td>
 
                     <td className="px-6 py-4 text-gray-900 font-medium">
 
