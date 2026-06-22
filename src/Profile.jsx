@@ -1824,7 +1824,7 @@ onClick={async () => {
                 <label className="mb-2 block text-sm font-bold text-slate-700">
                   {messageData.action === 'accept' ? 'رسالة القبول' : 'رسالة الرفض'} <span className="text-red-500">*</span>
                 </label>
-                <textarea value={messageData.message} rows={4} resize="none"
+                <textarea value={messageData.message} rows={4}
                   onChange={(e) => setMessageData({ ...messageData, message: e.target.value })}
                   placeholder={messageData.action === 'accept' ? 'مثال: تم قبولك في هذه المبادرة!' : 'مثال: نعتذر، تم إغلاق باب التسجيل.'}
                   className={`${INPUT} resize-none`} />
