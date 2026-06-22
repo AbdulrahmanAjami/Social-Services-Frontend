@@ -36,14 +36,14 @@ function Alert({ type, children }) {
 function StatusBadge({ status }) {
   if (status === 3) // 3 = Accepted
     return (
-      <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">
-        <CheckCircle className="size-3.5" /> مقبول
+      <span className="inline-flex items-center gap-1.5 rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-bold text-red-700">
+        <XCircle className="size-3.5" /> مرفوض
       </span>
     );
   if (status === 2) // 2 = Rejected
     return (
-      <span className="inline-flex items-center gap-1.5 rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-bold text-red-700">
-        <XCircle className="size-3.5" /> مرفوض
+      <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">
+        <CheckCircle className="size-3.5" /> مقبول
       </span>
     );
   // Default to Pending for status 1 or any other value
