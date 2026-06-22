@@ -440,6 +440,8 @@ const handleUpdate = async () => {
     setIsEditing(false);
     updateUser({ ...user, ...formData });
     setImageFile(null);
+    // Re-fetch user details to get the updated image path from the server
+    await fetchUserDetails();
     setTimeout(() => setSuccess(''), 3000);
   } catch (err) {
     setError('فشل تحديث الملف الشخصي: ' + err.message);
