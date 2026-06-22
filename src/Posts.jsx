@@ -115,6 +115,11 @@ function Reveal({ children, delay = 0, className = '' }) {
   );
 }
 
+
+  // ── Toast state ────────────────────────────────────────────────────────────
+  const [toast, setToast] = useState(null);
+  const showToast = (message, type = 'success') => setToast({ message, type });
+
 // ═══════════════════════════════════════════════════════════════════════════════
 // MAIN COMPONENT
 // ═══════════════════════════════════════════════════════════════════════════════
