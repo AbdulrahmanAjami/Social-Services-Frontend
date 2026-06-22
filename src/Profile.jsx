@@ -761,42 +761,45 @@ const openApplicantFeedback = async (applicant) => {
         </div>
 
         {/* Stats row */}
-        <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div className="mb-8 grid grid-cols-1 gap-5 md:grid-cols-3">
           {[
             { label: 'نقطة تطوع',    value: userStats.points,             sub: 'النقاط',      color: 'from-violet-500 to-purple-600', bgColor: 'bg-violet-50', borderColor: 'border-violet-200', lineColor: 'bg-violet-500', text: 'text-violet-600', icon: Sparkles },
             { label: 'خدمة تطوعية',  value: userStats.participationCount, sub: 'المشاركات',   color: 'from-emerald-500 to-teal-600',  bgColor: 'bg-emerald-50', borderColor: 'border-emerald-200', lineColor: 'bg-emerald-500', text: 'text-emerald-600', icon: CheckCircle },
             { label: '/5',          value:(Number(userAverageRating) || 0).toFixed(1), sub: 'التقييم',     color: 'from-amber-500 to-orange-600',  bgColor: 'bg-amber-50', borderColor: 'border-amber-200', lineColor: 'bg-amber-500', text: 'text-amber-600',    icon: Shield },
           ].map(({ label, value, sub, color, bgColor, borderColor, lineColor, text, icon: Icon }) => (
-            <div key={sub} className={`flex flex-col gap-4 rounded-3xl border ${borderColor} ${bgColor} p-6 shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5`}>
+            <div key={sub} className={`flex flex-col gap-4 rounded-3xl border ${borderColor} ${bgColor} p-6 md:p-8 shadow-sm transition-all hover:shadow-lg hover:-translate-y-1 min-h-48 justify-between`}>
               {/* Top: Icon + Label */}
               <div className="flex items-center justify-between">
-                <span className={`flex size-12 items-center justify-center rounded-2xl bg-gradient-to-br ${color} shadow-lg`}>
-                  <Icon className="size-6 text-white" />
+                <span className={`flex size-14 items-center justify-center rounded-2xl bg-gradient-to-br ${color} shadow-lg`}>
+                  <Icon className="size-7 text-white" />
                 </span>
                 <span className={`text-sm font-bold ${text}`}>{sub}</span>
               </div>
               
               {/* Middle: Main Value */}
-              <div>
-                <div className="text-4xl font-black text-slate-800">
-                  {value}
+              <div className="flex-grow flex items-center">
+                <div>
+                  <div className="text-5xl font-black text-slate-800">
+                    {value}
+                  </div>
+                  <div className="text-sm font-semibold text-slate-500 mt-2">{label}</div>
                 </div>
-                <div className="text-xs font-semibold text-slate-500 mt-1">{label}</div>
               </div>
               
               {/* Bottom: Progress bar */}
               {sub === 'التقييم' ? (
                 <div className="space-y-2">
-                  <div className="h-2 overflow-hidden rounded-full bg-slate-200">
+                  <div className="h-2.5 overflow-hidden rounded-full bg-slate-200">
                     <div className="h-full rounded-full bg-gradient-to-r from-amber-400 to-orange-500 transition-all duration-700" style={{ width: `${(value / 5) * 100}%` }} />
                   </div>
                   <p className="text-xs text-slate-500 text-center">من 5 نجوم</p>
                 </div>
               ) : (
-                <div className={`h-1 rounded-full ${lineColor}`} />
+                <div className={`h-1.5 rounded-full ${lineColor}`} />
               )}
             </div>
           ))}
+        </div>
         </div>
         </div>
 
