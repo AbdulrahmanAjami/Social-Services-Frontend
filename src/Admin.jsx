@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { useToast } from './Toast';
+import { useConfirm } from './ConfirmModal';
 
 import axios from 'axios';
 
@@ -77,30 +79,29 @@ adminApi.interceptors.request.use(config => {
 
 
 const Admin = () => {
-
   const { user } = useAuth();
-
   const navigate = useNavigate();
-
+  const { showToast } = useToast();
+  const { confirm } = useConfirm();
   const ADMIN_USERNAME = 'aboodajami';
 
 
   // Extracts the admin's ID from the JWT token stored in localStorage.
-// The token uses the long XML-based claim name for the user identifier.
-const getAdminIdFromToken = () => {
-  const token = localStorage.getItem('adminToken');
-  if (!token) return null;
+  // The token uses the long XML-based claim name for the user identifier.
+  const getAdminIdFromToken = () => {
+    const token = localStorage.getItem('adminToken');
+    if (!token) return null;
 
-  try {
-    const payload = JSON.parse(atob(token.split('.')[1]));
-    const idClaim =
-      payload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'];
-    return idClaim ? Number(idClaim) : null;
-  } catch (err) {
-    console.error('Error decoding admin token:', err);
-    return null;
-  }
-};
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      const idClaim =
+        payload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'];
+      return idClaim ? Number(idClaim) : null;
+    } catch (err) {
+      console.error('Error decoding admin token:', err);
+      return null;
+    }
+  };
 
   const handleAdminLogout = () => {
 
@@ -183,6 +184,8 @@ const getAdminIdFromToken = () => {
     totalPosts: 0,
 
     totalUsers: 0,
+
+    totalVolunteers: 0,
 
     ageDistribution: [],
 
@@ -293,27 +296,27 @@ const getAdminIdFromToken = () => {
 
 
   const loadAllData = async () => {
-
     setLoading(true);
-
     setError('');
-
     try {
-
       // Get dashboard status
-
       const statsResponse = await adminApi.get('/Admin/GetDashBoardStatus');
 
+      // Get volunteers count
+      let volunteersCount = 0;
+      try {
+        const volunteersCountRes = await adminApi.get('/Admin/GetVolunteersCount');
+        volunteersCount = volunteersCountRes.data?.count ?? volunteersCountRes.data ?? 0;
+      } catch (volErr) {
+        console.error('Error fetching volunteers count:', volErr);
+      }
+
       setStats({
-
         totalPosts: statsResponse.data.totalPost,
-
         totalUsers: statsResponse.data.totalUser,
-
+        totalVolunteers: volunteersCount,
         ageDistribution: [],
-
       });
-
 
 
       // Get user logs
@@ -349,7 +352,7 @@ const getAdminIdFromToken = () => {
         title: post.postTitle,
         description: post.description,
         createdBy: post.authorName,
-        userID: post.userID,        
+        userID: post.userID,
         createdDate: post.publishDateTime,
         isLocked: post.status === 0,
         status: post.status === 1 ? 'Active' : 'Completed',
@@ -447,9 +450,10 @@ const getAdminIdFromToken = () => {
 
   const handleDeletePost = async (postID) => {
 
-    if (!window.confirm('هل أنت متأكد من حذف هذا المنشور؟')) return;
-
-
+    const ok = await confirm({
+      title: 'حذف المنشور', message: 'هل أنت متأكد من حذف هذا المنشور؟',
+      variant: 'danger', confirmText: 'حذف'
+    }); if (!ok) return;
 
     try {
 
@@ -457,11 +461,11 @@ const getAdminIdFromToken = () => {
 
       setPosts(posts.filter((p) => p.id !== postID));
 
-      alert('تم حذف المنشور بنجاح');
+      showToast('تم حذف المنشور بنجاح', 'success');
 
     } catch (err) {
 
-      alert('خطأ في حذف المنشور: ' + err.message);
+      showToast('خطأ في حذف المنشور: ' + err.message, 'error');
 
     }
 
@@ -485,11 +489,11 @@ const getAdminIdFromToken = () => {
 
       setEditingPost(null);
 
-      alert('تم تحديث المنشور بنجاح');
+      showToast('تم تحديث المنشور بنجاح', 'success');
 
     } catch (err) {
 
-      alert('خطأ في تحديث المنشور: ' + err.message);
+      showToast('خطأ في تحديث المنشور: ' + err.message, 'error');
 
     }
 
@@ -505,10 +509,10 @@ const getAdminIdFromToken = () => {
 
         // Block user
 
-await adminApi.put('/Admin/BlockUser', null, { params: { UserID: userId } });
+        await adminApi.put('/Admin/BlockUser', null, { params: { UserID: userId } });
         setUsers(users.map(u => u.id === userId ? { ...u, isActive: false } : u));
 
-        alert('تم تعطيل حساب المستخدم بنجاح');
+        showToast('تم تعطيل حساب المستخدم بنجاح', 'success');
 
       } else {
 
@@ -518,7 +522,7 @@ await adminApi.put('/Admin/BlockUser', null, { params: { UserID: userId } });
 
         setUsers(users.map(u => u.id === userId ? { ...u, isActive: true } : u));
 
-        alert('تم تفعيل حساب المستخدم بنجاح');
+        showToast('تم تفعيل حساب المستخدم بنجاح', 'success');
 
       }
 
@@ -526,8 +530,7 @@ await adminApi.put('/Admin/BlockUser', null, { params: { UserID: userId } });
 
       console.error('Error toggling user account:', err);
 
-      alert('خطأ في تغيير حالة الحساب: ' + (err.response?.data?.message || err.message));
-
+      showToast('خطأ في تغيير حالة الحساب: ' + (err.response?.data?.message || err.message), 'error');
     }
 
   };
@@ -537,33 +540,34 @@ await adminApi.put('/Admin/BlockUser', null, { params: { UserID: userId } });
   // Blocked Users Functions
 
   const fetchBlockedUsers = async () => {
-  setBlockedUsersLoading(true);
-  setBlockedUsersError('');
-  try {
-    const response = await adminApi.get('/Admin/GetAllUsres');
-    const allUsers = response.data || [];
-    const blocked = allUsers
-      .filter(user => user.isActive === false || user.isActive === 0)
-      .map(user => ({
-        id: user.userID,
-        username: user.username,
-        email: user.email,
-        createdAt: user.createdAt,
-      }));
-    setBlockedUsers(blocked);
-  } catch (err) {
-    setBlockedUsersError('حدث خطأ في تحميل المستخدمين المحظورين');
-    console.error('Error fetching blocked users:', err);
-  } finally {
-    setBlockedUsersLoading(false);
-  }
-};
+    setBlockedUsersLoading(true);
+    setBlockedUsersError('');
+    try {
+      const response = await adminApi.get('/Admin/GetAllUsres');
+      const allUsers = response.data || [];
+      const blocked = allUsers
+        .filter(user => user.isActive === false || user.isActive === 0)
+        .map(user => ({
+          id: user.userID,
+          username: user.username,
+          email: user.email,
+          createdAt: user.createdAt,
+        }));
+      setBlockedUsers(blocked);
+    } catch (err) {
+      setBlockedUsersError('حدث خطأ في تحميل المستخدمين المحظورين');
+      console.error('Error fetching blocked users:', err);
+    } finally {
+      setBlockedUsersLoading(false);
+    }
+  };
 
 
 
   const handleUnblockUser = async (userId) => {
 
-    if (!window.confirm('هل أنت متأكد من رفع الحظر عن هذا المستخدم؟')) return;
+    const ok = await confirm({ title: 'رفع الحظر', message: 'هل أنت متأكد من رفع الحظر عن هذا المستخدم؟', variant: 'default', confirmText: 'رفع الحظر' });
+    if (!ok) return;
 
 
 
@@ -573,14 +577,13 @@ await adminApi.put('/Admin/BlockUser', null, { params: { UserID: userId } });
 
       setBlockedUsers(blockedUsers.filter(u => u.id !== userId));
 
-      alert('تم رفع الحظر بنجاح');
+      showToast('تم رفع الحظر بنجاح', 'success');
 
     } catch (err) {
 
       console.error('Error unblocking user:', err);
 
-      alert('خطأ في رفع الحظر: ' + (err.response?.data?.message || err.message));
-
+      showToast('خطأ في رفع الحظر: ' + (err.response?.data?.message || err.message), 'error');
     }
 
   };
@@ -589,63 +592,68 @@ await adminApi.put('/Admin/BlockUser', null, { params: { UserID: userId } });
 
   // Volunteer Applications Functions
 
-const fetchVolunteerApplications = async () => {
-  setVolunteerLoading(true);
-  try {
-    const response = await adminApi.get('/Volunteer/Get all Volunteer Applications');
-    const applications = response.data || [];
+  const fetchVolunteerApplications = async () => {
+    setVolunteerLoading(true);
+    try {
+      const response = await adminApi.get('/Volunteer/Get all Volunteer Applications');
+      const applications = response.data || [];
 
-    // Fetch the username for each application's userID in parallel.
-    // If any individual lookup fails, fall back to showing the userID instead of crashing the whole list.
-    const applicationsWithUsernames = await Promise.all(
-      applications.map(async (app) => {
-        try {
-          const userRes = await adminApi.get('/User/Get User', {
-            params: { userID: app.userID },
-          });
-          return { ...app, username: userRes.data?.username || `#${app.userID}` };
-        } catch (err) {
-          console.error(`Error fetching username for userID ${app.userID}:`, err);
-          return { ...app, username: `#${app.userID}` };
-        }
-      })
-    );
+      // Fetch the username for each application's userID in parallel.
+      // If any individual lookup fails, fall back to showing the userID instead of crashing the whole list.
+      const applicationsWithUsernames = await Promise.all(
+        applications.map(async (app) => {
+          try {
+            const userRes = await adminApi.get('/User/Get User', {
+              params: { userID: app.userID },
+            });
+            return { ...app, username: userRes.data?.username || `#${app.userID}` };
+          } catch (err) {
+            console.error(`Error fetching username for userID ${app.userID}:`, err);
+            return { ...app, username: `#${app.userID}` };
+          }
+        })
+      );
 
-    setVolunteerApplications(applicationsWithUsernames);
-  } catch (err) {
-    console.error('Error fetching volunteer applications:', err);
-    alert('خطأ في تحميل طلبات التطوع');
-  } finally {
-    setVolunteerLoading(false);
-  }
-};
+      setVolunteerApplications(applicationsWithUsernames);
+    } catch (err) {
+      console.error('Error fetching volunteer applications:', err);
+      showToast('خطأ في تحميل طلبات التطوع', 'error');
+    } finally {
+      setVolunteerLoading(false);
+    }
+  };
 
 
 
 
   const handleVolunteerResponse = async (volunteerApplicationID, isApproved) => {
-  const action = isApproved ? 'قبول' : 'رفض';
-  if (!window.confirm(`هل أنت متأكد من ${action} طلب التطوع؟`)) return;
-
-  const adminID = getAdminIdFromToken();
-  if (!adminID) {
-    alert('تعذر تحديد هوية الأدمن، يرجى تسجيل الدخول مجدداً');
-    return;
-  }
-
-  try {
-    await adminApi.post('/Volunteer/Response To Volunteer Application', {
-      volunteerApplicationID,
-      adminID,
-      isApproved
+    const action = isApproved ? 'قبول' : 'رفض';
+    const ok = await confirm({
+      title: `${action} طلب التطوع`,
+      message: `هل أنت متأكد من ${action} طلب التطوع؟`,
+      variant: isApproved ? 'default' : 'danger',
+      confirmText: action
     });
-    alert(`تم ${action} طلب التطوع بنجاح`);
-    fetchVolunteerApplications();
-  } catch (err) {
-    console.error('Error responding to volunteer application:', err);
-    alert('خطأ في معالجة الطلب: ' + (err.response?.data?.message || err.message));
-  }
-};
+    if (!ok) return;
+    const adminID = getAdminIdFromToken();
+    if (!adminID) {
+      showToast('تعذر تحديد هوية الأدمن، يرجى تسجيل الدخول مجدداً', 'error');
+      return;
+    }
+
+    try {
+      await adminApi.post('/Volunteer/Response To Volunteer Application', {
+        volunteerApplicationID,
+        adminID,
+        isApproved
+      });
+      showToast(`تم ${action} طلب التطوع بنجاح`, 'success');
+      fetchVolunteerApplications();
+    } catch (err) {
+      console.error('Error responding to volunteer application:', err);
+      showToast('خطأ في معالجة الطلب: ' + (err.response?.data?.message || err.message), 'error');
+    }
+  };
 
 
 
@@ -667,11 +675,11 @@ const fetchVolunteerApplications = async () => {
 
       setPosts(updatedPosts);
 
-      alert('تم إكمال المنشور بنجاح');
+      showToast('تم إكمال المنشور بنجاح', 'success');
 
     } catch (err) {
 
-      alert('خطأ في إكمال المنشور: ' + err.message);
+      showToast('خطأ في إكمال المنشور: ' + err.message, 'error');
 
     }
 
@@ -693,11 +701,11 @@ const fetchVolunteerApplications = async () => {
 
       setPosts(updatedPosts);
 
-      alert('تم قفل المنشور بنجاح');
+      showToast('تم قفل المنشور بنجاح', 'success');
 
     } catch (err) {
 
-      alert('خطأ في قفل المنشور: ' + err.message);
+      showToast('خطأ في قفل المنشور: ' + err.message, 'error');
 
     }
 
@@ -719,11 +727,11 @@ const fetchVolunteerApplications = async () => {
 
       setPosts(updatedPosts);
 
-      alert('تم فتح المنشور بنجاح');
+      showToast('تم فتح المنشور بنجاح', 'success');
 
     } catch (err) {
 
-      alert('خطأ في فتح المنشور: ' + err.message);
+      showToast('خطأ في فتح المنشور: ' + err.message, 'error');
 
     }
 
@@ -738,12 +746,12 @@ const fetchVolunteerApplications = async () => {
         if (postsFilter === 'active' && post.isLocked) return false;
         if (postsFilter === 'locked' && !post.isLocked) return false;
       }
-      
+
       const searchUpdate = postsSearch.toLowerCase().trim();
 
       return (
         post.createdBy?.toLowerCase().includes(searchUpdate) ||
-        post.userID?.toString().includes(searchUpdate) 
+        post.userID?.toString().includes(searchUpdate)
       );
     })
 
@@ -799,49 +807,37 @@ const fetchVolunteerApplications = async () => {
 
       {/* Stats Cards */}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg p-6 text-white shadow-lg hover:shadow-xl transition-shadow">
-
           <div className="flex items-center justify-between">
-
             <div>
-
               <p className="text-blue-100 text-sm">إجمالي المنشورات</p>
-
               <p className="text-4xl font-bold mt-2">{stats.totalPosts}</p>
-
             </div>
-
             <FileText size={40} className="opacity-80" />
-
           </div>
-
         </div>
-
-
 
         <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-lg p-6 text-white shadow-lg hover:shadow-xl transition-shadow">
-
           <div className="flex items-center justify-between">
-
             <div>
-
               <p className="text-green-100 text-sm">إجمالي المستخدمين</p>
-
               <p className="text-4xl font-bold mt-2">{stats.totalUsers}</p>
-
             </div>
-
             <Users size={40} className="opacity-80" />
-
           </div>
-
         </div>
 
+        <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg p-6 text-white shadow-lg hover:shadow-xl transition-shadow">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-purple-100 text-sm">عدد المتطوعين</p>
+              <p className="text-4xl font-bold mt-2">{stats.totalVolunteers}</p>
+            </div>
+            <HeartHandshake size={40} className="opacity-80" />
+          </div>
+        </div>
       </div>
-
-
 
       {/* Age Distribution Chart */}
 
@@ -877,27 +873,25 @@ const fetchVolunteerApplications = async () => {
 
                   style={{
 
-                    width: `${
-
-                      stats.ageDistribution.reduce((sum, a) => sum + a.count, 0) >
+                    width: `${stats.ageDistribution.reduce((sum, a) => sum + a.count, 0) >
 
                       0
 
-                        ? (item.count /
+                      ? (item.count /
 
-                            stats.ageDistribution.reduce(
+                        stats.ageDistribution.reduce(
 
-                              (sum, a) => sum + a.count,
+                          (sum, a) => sum + a.count,
 
-                              0
+                          0
 
-                            )) *
+                        )) *
 
-                          100
+                      100
 
-                        : 0
+                      : 0
 
-                    }%`,
+                      }%`,
 
                   }}
 
@@ -988,7 +982,7 @@ const fetchVolunteerApplications = async () => {
               <tr>
 
                 <th className="px-6 py-3 text-right text-gray-700 font-semibold">
-                    المستخدم
+                  المستخدم
                 </th>
 
                 <th className="px-6 py-3 text-right text-gray-700 font-semibold">
@@ -1059,15 +1053,13 @@ const fetchVolunteerApplications = async () => {
 
                       <span
 
-                        className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                        className={`px-3 py-1 rounded-full text-xs font-semibold ${post.isLocked
 
-                          post.isLocked
+                          ? 'bg-red-100 text-red-800'
 
-                            ? 'bg-red-100 text-red-800'
+                          : 'bg-green-100 text-green-800'
 
-                            : 'bg-green-100 text-green-800'
-
-                        }`}
+                          }`}
 
                       >
 
@@ -1333,15 +1325,13 @@ const fetchVolunteerApplications = async () => {
 
                       <span
 
-                        className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                        className={`px-3 py-1 rounded-full text-xs font-semibold ${u.isActive
 
-                          u.isActive
+                          ? 'bg-green-100 text-green-800'
 
-                            ? 'bg-green-100 text-green-800'
+                          : 'bg-red-100 text-red-800'
 
-                            : 'bg-red-100 text-red-800'
-
-                        }`}
+                          }`}
 
                       >
 
@@ -1357,15 +1347,13 @@ const fetchVolunteerApplications = async () => {
 
                         onClick={() => handleToggleUserAccount(u.id, u.isActive)}
 
-                        className={`p-2 rounded-lg transition-colors ${
+                        className={`p-2 rounded-lg transition-colors ${u.isActive
 
-                          u.isActive
+                          ? 'hover:bg-red-50 text-red-600'
 
-                            ? 'hover:bg-red-50 text-red-600'
+                          : 'hover:bg-green-50 text-green-600'
 
-                            : 'hover:bg-green-50 text-green-600'
-
-                        }`}
+                          }`}
 
                         title={
 
@@ -1689,7 +1677,7 @@ const fetchVolunteerApplications = async () => {
 
       </div>
 
-    </div>  );
+    </div>);
 
 
 
@@ -1869,21 +1857,20 @@ const fetchVolunteerApplications = async () => {
 
                     <td className="px-6 py-4">
 
-<span
-  className={`px-3 py-1 rounded-full text-xs font-semibold ${
-    app.applicationStatus === 'Pending'
-      ? 'bg-yellow-100 text-yellow-800'
-      : app.applicationStatus === 'Approved'
-      ? 'bg-green-100 text-green-800'
-      : 'bg-red-100 text-red-800'
-  }`}
->
-  {app.applicationStatus === 'Pending'
-    ? 'قيد الانتظار'
-    : app.applicationStatus === 'Approved'
-    ? 'مقبول'
-    : 'مرفوض'}
-</span>
+                      <span
+                        className={`px-3 py-1 rounded-full text-xs font-semibold ${app.applicationStatus === 'Pending'
+                          ? 'bg-yellow-100 text-yellow-800'
+                          : app.applicationStatus === 'Approved'
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-red-100 text-red-800'
+                          }`}
+                      >
+                        {app.applicationStatus === 'Pending'
+                          ? 'قيد الانتظار'
+                          : app.applicationStatus === 'Approved'
+                            ? 'مقبول'
+                            : 'مرفوض'}
+                      </span>
 
                     </td>
 
@@ -2045,15 +2032,13 @@ const fetchVolunteerApplications = async () => {
 
             onClick={() => setActiveTab('stats')}
 
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${activeTab === 'stats'
 
-              activeTab === 'stats'
+              ? 'bg-blue-500 text-white'
 
-                ? 'bg-blue-500 text-white'
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
 
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-
-            }`}
+              }`}
 
           >
 
@@ -2067,15 +2052,13 @@ const fetchVolunteerApplications = async () => {
 
             onClick={() => setActiveTab('posts')}
 
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${activeTab === 'posts'
 
-              activeTab === 'posts'
+              ? 'bg-blue-500 text-white'
 
-                ? 'bg-blue-500 text-white'
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
 
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-
-            }`}
+              }`}
 
           >
 
@@ -2089,15 +2072,13 @@ const fetchVolunteerApplications = async () => {
 
             onClick={() => setActiveTab('users')}
 
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${activeTab === 'users'
 
-              activeTab === 'users'
+              ? 'bg-blue-500 text-white'
 
-                ? 'bg-blue-500 text-white'
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
 
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-
-            }`}
+              }`}
 
           >
 
@@ -2111,15 +2092,13 @@ const fetchVolunteerApplications = async () => {
 
             onClick={() => setActiveTab('blocked')}
 
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${activeTab === 'blocked'
 
-              activeTab === 'blocked'
+              ? 'bg-blue-500 text-white'
 
-                ? 'bg-blue-500 text-white'
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
 
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-
-            }`}
+              }`}
 
           >
 
@@ -2133,15 +2112,13 @@ const fetchVolunteerApplications = async () => {
 
             onClick={() => setActiveTab('volunteers')}
 
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${activeTab === 'volunteers'
 
-              activeTab === 'volunteers'
+              ? 'bg-blue-500 text-white'
 
-                ? 'bg-blue-500 text-white'
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
 
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-
-            }`}
+              }`}
 
           >
 
@@ -2155,15 +2132,13 @@ const fetchVolunteerApplications = async () => {
 
             onClick={() => setActiveTab('userLogs')}
 
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${activeTab === 'userLogs'
 
-              activeTab === 'userLogs'
+              ? 'bg-blue-500 text-white'
 
-                ? 'bg-blue-500 text-white'
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
 
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-
-            }`}
+              }`}
 
           >
 
@@ -2175,15 +2150,13 @@ const fetchVolunteerApplications = async () => {
 
             onClick={() => setActiveTab('postLogs')}
 
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${activeTab === 'postLogs'
 
-              activeTab === 'postLogs'
+              ? 'bg-blue-500 text-white'
 
-                ? 'bg-blue-500 text-white'
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
 
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-
-            }`}
+              }`}
 
           >
 
@@ -2195,15 +2168,13 @@ const fetchVolunteerApplications = async () => {
 
             onClick={() => setActiveTab('loginLogs')}
 
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${activeTab === 'loginLogs'
 
-              activeTab === 'loginLogs'
+              ? 'bg-blue-500 text-white'
 
-                ? 'bg-blue-500 text-white'
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
 
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-
-            }`}
+              }`}
 
           >
 
@@ -2260,4 +2231,3 @@ const fetchVolunteerApplications = async () => {
 
 
 export default Admin;
-
