@@ -424,6 +424,7 @@ const handleUpdate = async () => {
 
 const handleDeletePost = async () => {
   if (!selectedPost) return;
+  console.log('Deleting post:', selectedPost.postID);
   setLoading(true);
   try {
     await api.delete('/Posts/Delete Post', { params: { postID: selectedPost.postID } });
@@ -431,6 +432,7 @@ const handleDeletePost = async () => {
     setShowDeleteModal(false); setSelectedPost(null);
     setSuccess('✅ تم حذف المنشور بنجاح'); setTimeout(() => setSuccess(''), 3000);
   } catch (err) {
+    console.error('Delete post error:', err);
     setError('❌ ' + (err.response?.data?.message || err.response?.data || err.message || 'فشل حذف المنشور'));
     setTimeout(() => setError(''), 3000);
   } finally { setLoading(false); }
