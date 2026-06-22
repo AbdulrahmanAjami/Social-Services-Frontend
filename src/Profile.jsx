@@ -422,19 +422,19 @@ const handleUpdate = async () => {
   }
 };
 
-  const handleDeletePost = async () => {
-    if (!selectedPost) return;
-    setLoading(true);
-    try {
-      await postsAPI.deletePost(selectedPost.postID);
-      setUserPosts(p => p.filter(post => post.postID !== selectedPost.postID));
-      setShowDeleteModal(false); setSelectedPost(null);
-      setSuccess('✅ تم حذف المنشور بنجاح'); setTimeout(() => setSuccess(''), 3000);
-    } catch (err) {
-      setError('❌ ' + (err.response?.data?.message || err.response?.data || err.message || 'فشل حذف المنشور'));
-      setTimeout(() => setError(''), 3000);
-    } finally { setLoading(false); }
-  };
+const handleDeletePost = async () => {
+  if (!selectedPost) return;
+  setLoading(true);
+  try {
+    await api.delete('/Posts/Delete Post', { params: { postID: selectedPost.postID } });
+    setUserPosts(p => p.filter(post => post.postID !== selectedPost.postID));
+    setShowDeleteModal(false); setSelectedPost(null);
+    setSuccess('✅ تم حذف المنشور بنجاح'); setTimeout(() => setSuccess(''), 3000);
+  } catch (err) {
+    setError('❌ ' + (err.response?.data?.message || err.response?.data || err.message || 'فشل حذف المنشور'));
+    setTimeout(() => setError(''), 3000);
+  } finally { setLoading(false); }
+};
 
   const handleUpdatePost = async (e) => {
     e?.preventDefault();
