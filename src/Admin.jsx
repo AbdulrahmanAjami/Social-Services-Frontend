@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useToast } from './Toast';
+import { useConfirm } from './ConfirmModal';
 
 import axios from 'axios';
 
@@ -81,6 +82,7 @@ const Admin = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { showToast } = useToast();
+  const { confirm } = useConfirm();
   const ADMIN_USERNAME = 'aboodajami';
 
 
@@ -448,10 +450,10 @@ const Admin = () => {
 
   const handleDeletePost = async (postID) => {
 
-
-    
-   const ok = window.confirm(`هل أنت متأكد من ${action} طلب التطوع؟`);
-
+    const ok = await confirm({
+      title: 'حذف المنشور', message: 'هل أنت متأكد من حذف هذا المنشور؟',
+      variant: 'danger', confirmText: 'حذف'
+    }); if (!ok) return;
 
     try {
 
@@ -564,8 +566,7 @@ const Admin = () => {
 
   const handleUnblockUser = async (userId) => {
 
-    const ok = window.confirm('هل أنت متأكد من رفع الحظر عن هذا المستخدم؟');
-
+    const ok = await confirm({ title: 'رفع الحظر', message: 'هل أنت متأكد من رفع الحظر عن هذا المستخدم؟', variant: 'default', confirmText: 'رفع الحظر' });
     if (!ok) return;
 
 
@@ -627,7 +628,12 @@ const Admin = () => {
 
   const handleVolunteerResponse = async (volunteerApplicationID, isApproved) => {
     const action = isApproved ? 'قبول' : 'رفض';
-
+    const ok = await confirm({
+      title: `${action} طلب التطوع`,
+      message: `هل أنت متأكد من ${action} طلب التطوع؟`,
+      variant: isApproved ? 'default' : 'danger',
+      confirmText: action
+    });
     if (!ok) return;
     const adminID = getAdminIdFromToken();
     if (!adminID) {
