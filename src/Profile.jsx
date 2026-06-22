@@ -555,8 +555,8 @@ const openApplicantFeedback = async (applicant) => {
     try {
       if (messageData.action === 'accept') await servicesAPI.acceptService(messageData.applicantId, messageData.message);
       else await servicesAPI.rejectService(messageData.applicantId, messageData.message);
-      const actionText = messageData.action === 'accept' ? 'قبول' : 'رفض';
-      setSuccess(messageData.isEdit ? '✅ تم تحديث القرار بنجاح' : `✅ تم ${actionText} المتقدم وإرسال الرسالة بنجاح`);
+      const actionText = messageData.action === 'accept' ? 'القبول' : 'الرفض';
+      setSuccess(messageData.isEdit ? '✅ تم تحديث القرار بنجاح' : `✅ تم ${actionText} بنجاح`);
       setShowMessageModal(false);
       setMessageData({ applicantId: null, action: '', message: '', isEdit: false });
       if (selectedPost?.postID) await fetchApplicants(selectedPost.postID);
@@ -1439,12 +1439,12 @@ onClick={async () => {
                           {a.status === 'pending' ? (
                             <>
                               <button onClick={() => handleAcceptApplicant(a.id)} disabled={loading}
-                                className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 py-2.5 text-sm font-bold text-white transition hover:bg-emerald-700 disabled:opacity-50">
-                                <UserCheck className="size-4" /> قبول
+                                className="inline-flex items-center justify-center gap-2 rounded-xl bg-red-500 py-2.5 text-sm font-bold text-white transition hover:bg-emerald-700 disabled:opacity-50">
+                                <UserCheck className="size-4" /> رفض
                               </button>
                               <button onClick={() => handleRejectApplicant(a.id)} disabled={loading}
-                                className="inline-flex items-center justify-center gap-2 rounded-xl bg-red-500 py-2.5 text-sm font-bold text-white transition hover:bg-red-600 disabled:opacity-50">
-                                <UserX className="size-4" /> رفض
+                                className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 py-2.5 text-sm font-bold text-white transition hover:bg-red-600 disabled:opacity-50">
+                                <UserX className="size-4" /> قبول
                               </button>
                             </>
                           ) : (
