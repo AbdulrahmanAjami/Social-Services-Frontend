@@ -86,6 +86,7 @@ const Profile = () => {
 
   const [imageFile, setImageFile]     = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
+  const [imageError, setImageError] = useState(false);
 
   // Posts
   const [userPosts, setUserPosts]               = useState([]);
@@ -710,8 +711,14 @@ const openApplicantFeedback = async (applicant) => {
             {/* Avatar */}
             <div className="relative shrink-0">
               <div className="size-28 overflow-hidden rounded-2xl ring-4 ring-white shadow-xl md:size-32">
-                {imagePreview || formData.imagepath ? (
-                  <img src={imagePreview || formData.imagepath} alt="" className="h-full w-full object-cover" />
+                {(imagePreview || (formData.imagepath && !imageError)) ? (
+                  <img 
+                    src={imagePreview || formData.imagepath} 
+                    alt="صورة المستخدم" 
+                    className="h-full w-full object-cover"
+                    onError={() => setImageError(true)}
+                    onLoad={() => setImageError(false)}
+                  />
                 ) : (
                   <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-emerald-50 to-teal-100">
                     <User className="size-14 text-emerald-600" />
@@ -756,11 +763,11 @@ const openApplicantFeedback = async (applicant) => {
         {/* Stats row */}
         <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
           {[
-            { label: 'نقطة تطوع',    value: userStats.points,             sub: 'النقاط',      color: 'from-violet-500 to-purple-600', bgColor: 'bg-violet-50', borderColor: 'border-violet-200', text: 'text-violet-600', icon: Sparkles },
-            { label: 'خدمة تطوعية',  value: userStats.participationCount, sub: 'المشاركات',   color: 'from-emerald-500 to-teal-600',  bgColor: 'bg-emerald-50', borderColor: 'border-emerald-200', text: 'text-emerald-600', icon: CheckCircle },
-            { label: '/5',          value:(Number(userAverageRating) || 0).toFixed(1), sub: 'التقييم',     color: 'from-amber-500 to-orange-600',  bgColor: 'bg-amber-50', borderColor: 'border-amber-200', text: 'text-amber-600',    icon: Shield },
-          ].map(({ label, value, sub, color, bgColor, borderColor, text, icon: Icon }) => (
-            <div key={sub} className={`flex flex-col gap-4 rounded-3xl border ${borderColor} ${bgColor} p-6 shadow-sm transition-all hover:shadow-md`}>
+            { label: 'نقطة تطوع',    value: userStats.points,             sub: 'النقاط',      color: 'from-violet-500 to-purple-600', bgColor: 'bg-violet-50', borderColor: 'border-violet-200', lineColor: 'bg-violet-500', text: 'text-violet-600', icon: Sparkles },
+            { label: 'خدمة تطوعية',  value: userStats.participationCount, sub: 'المشاركات',   color: 'from-emerald-500 to-teal-600',  bgColor: 'bg-emerald-50', borderColor: 'border-emerald-200', lineColor: 'bg-emerald-500', text: 'text-emerald-600', icon: CheckCircle },
+            { label: '/5',          value:(Number(userAverageRating) || 0).toFixed(1), sub: 'التقييم',     color: 'from-amber-500 to-orange-600',  bgColor: 'bg-amber-50', borderColor: 'border-amber-200', lineColor: 'bg-amber-500', text: 'text-amber-600',    icon: Shield },
+          ].map(({ label, value, sub, color, bgColor, borderColor, lineColor, text, icon: Icon }) => (
+            <div key={sub} className={`flex flex-col gap-4 rounded-3xl border ${borderColor} ${bgColor} p-6 shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5`}>
               {/* Top: Icon + Label */}
               <div className="flex items-center justify-between">
                 <span className={`flex size-12 items-center justify-center rounded-2xl bg-gradient-to-br ${color} shadow-lg`}>
@@ -770,14 +777,14 @@ const openApplicantFeedback = async (applicant) => {
               </div>
               
               {/* Middle: Main Value */}
-              <div className="flex-1">
+              <div>
                 <div className="text-4xl font-black text-slate-800">
                   {value}
-                  <span className="ml-2 text-sm font-bold text-slate-400">{label}</span>
                 </div>
+                <div className="text-xs font-semibold text-slate-500 mt-1">{label}</div>
               </div>
               
-              {/* Bottom: Progress bar for all */}
+              {/* Bottom: Progress bar */}
               {sub === 'التقييم' ? (
                 <div className="space-y-2">
                   <div className="h-2 overflow-hidden rounded-full bg-slate-200">
@@ -786,10 +793,11 @@ const openApplicantFeedback = async (applicant) => {
                   <p className="text-xs text-slate-500 text-center">من 5 نجوم</p>
                 </div>
               ) : (
-                <div className={`h-1 rounded-full bg-gradient-to-r ${color}`} />
+                <div className={`h-1 rounded-full ${lineColor}`} />
               )}
             </div>
           ))}
+        </div>
         </div>
 
         {/* ━━━━ CERTIFICATE SYSTEM ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
@@ -1212,7 +1220,7 @@ onClick={async () => {
                         className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-emerald-600 py-3 font-bold text-white transition hover:bg-emerald-700 disabled:opacity-50">
                         {loading ? '⏳ جاري الحفظ...' : <><Check className="size-4" /> حفظ التعديلات</>}
                       </button>
-                      <button onClick={() => { setIsEditing(false); fetchUserDetails(); setImageFile(null); setImagePreview(null); }}
+                      <button onClick={() => { setIsEditing(false); fetchUserDetails(); setImageFile(null); setImagePreview(null); setImageError(false); }}
                         className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-slate-100 py-3 font-bold text-slate-700 transition hover:bg-slate-200">
                         <X className="size-4" /> إلغاء
                       </button>
