@@ -245,10 +245,12 @@ setAppliedServices(services.map(s => {
   // Map the numeric status code coming from the backend to the string values
   // the rest of the UI (StatusBadge, filters, etc.) expects.
   // Backend: 1 = Pending, 2 = Rejected, 3 = Accepted
-  let status = 'pending'; // Default status
-  if (s.status === 3) {
-    status = 'accepted';
+  let status = ''; // Default status
+  if (s.status === 1) {
+    status = 'pending';
   } else if (s.status === 2) {
+    status = 'accepted';
+  } else if (s.status === 3) {
     status = 'rejected';
   }
 
@@ -294,10 +296,12 @@ setAppliedServices(prev => prev.filter(s => s.applicationID !== serviceApplicati
         const id = app.applicationID || app.serviceApplicationID || app.id || app.ApplicationID;
         const userID = app.userID || app.userId || app.UserID;
         const acceptanceMessage = app.acceptanceMessage || app.message || app.responseMessage || '';
-        let status = 'pending'; // Default status
-        if (app.accepted === true) {
+        let status = ''; // Default status
+        if (app.status === 1) {
+          status = 'pending';
+        } else if (app.status === 2) {
           status = 'accepted';
-        } else if (app.accepted === false) {
+        } else if (app.status === 3) {
           status = 'rejected';
         }
         console.log(`Applicant ${id}: accepted=${app.accepted}, status=${status}`);
