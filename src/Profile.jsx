@@ -427,14 +427,24 @@ const handleDeletePost = async () => {
   console.log('Deleting post:', selectedPost.postID);
   setLoading(true);
   try {
+    // Try with postID in query params
     await api.delete('/Posts/Delete Post', { params: { postID: selectedPost.postID } });
     setUserPosts(p => p.filter(post => post.postID !== selectedPost.postID));
     setShowDeleteModal(false); setSelectedPost(null);
     setSuccess('✅ تم حذف المنشور بنجاح'); setTimeout(() => setSuccess(''), 3000);
   } catch (err) {
     console.error('Delete post error:', err);
-    setError('❌ ' + (err.response?.data?.message || err.response?.data || err.message || 'فشل حذف المنشور'));
-    setTimeout(() => setError(''), 3000);
+    // Try alternative method - send postID in body
+    try {
+      await api.delete('/Posts/Delete Post', { data: { postID: selectedPost.postID } });
+      setUserPosts(p => p.filter(post => post.postID !== selectedPost.postID));
+      setShowDeleteModal(false); setSelectedPost(null);
+      setSuccess('✅ تم حذف المنشور بنجاح'); setTimeout(() => setSuccess(''), 3000);
+    } catch (err2) {
+      console.error('Alternative delete method also failed:', err2);
+      setError('❌ ' + (err.response?.data?.message || err.response?.data || err.message || 'فشل حذف المنشور'));
+      setTimeout(() => setError(''), 3000);
+    }
   } finally { setLoading(false); }
 };
 
