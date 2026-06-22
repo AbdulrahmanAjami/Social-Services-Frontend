@@ -292,8 +292,10 @@ setAppliedServices(prev => prev.filter(s => s.applicationID !== serviceApplicati
         const userID = app.userID || app.userId || app.UserID;
         const acceptanceMessage = app.acceptanceMessage || app.message || app.responseMessage || '';
         let status = 'pending';
-        if (app.accepted === true) status = 'accepted';
-        else if (app.accepted === false && acceptanceMessage) status = 'rejected';
+        // Check for explicit rejection first
+        if (app.accepted === false) status = 'rejected';
+        // Then check for explicit acceptance
+        else if (app.accepted === true) status = 'accepted';
         console.log(`Applicant ${id}: accepted=${app.accepted}, status=${status}`);
         return {
           id, userID, status, accepted: app.accepted, acceptanceMessage,
