@@ -741,7 +741,6 @@ const fetchVolunteerApplications = async () => {
       return (
         post.createdBy?.toLowerCase().includes(postsSearch.toLowerCase()) ||
         post.userId?.toString().toLowerCase().includes(postsSearch.toLowerCase()) || 
-        post.id?.toString().includes(postsSearch)
       );
     })
 
