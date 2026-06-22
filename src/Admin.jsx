@@ -742,7 +742,6 @@ const fetchVolunteerApplications = async () => {
       const searchUpdate = postsSearch.toLowerCase().trim();
 
       return (
-        post.title?.toLowerCase().includes(searchUpdate) ||
         post.createdBy?.toLowerCase().includes(searchUpdate) ||
         post.userId?.toString().includes(searchUpdate) 
       );
