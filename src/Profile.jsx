@@ -644,7 +644,7 @@ const openApplicantFeedback = async (applicant) => {
   // RENDER
   // ══════════════════════════════════════════════════════════════════════════
   return (
-    <>
+    <div className="min-h-screen bg-slate-50" dir="rtl">
       <style>{`
         @media print {
           body * { visibility: hidden; }
@@ -1845,9 +1845,9 @@ onClick={async () => {
           </div>
         </div>
       )}
-    </div>
-    </>
-  );
-};
+
+  
 
 export default Profile;
+    </div>);
+};
