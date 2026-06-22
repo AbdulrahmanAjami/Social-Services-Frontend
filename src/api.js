@@ -247,10 +247,10 @@ export const servicesAPI = {
     api.get('/Services/Get Service Applications for User', { params: { username } }),
   
   acceptService: (applicationID, message = null) => 
-    api.post(`/Services/Respond To Service Application?serviceApplicationID=${applicationID}&AcceptanceMessage=${encodeURIComponent(message || '')}`),
+    api.post(`/Services/Respond To Service Application?serviceApplicationID=${applicationID}&IsAccepted=true&AcceptanceMessage=${encodeURIComponent(message || '')}`),
   
   rejectService: (applicationID, message = null) => 
-    api.post(`/Services/Reject Service?serviceApplicationID=${applicationID}&AcceptanceMessage=${encodeURIComponent(message || '')}`),
+    api.post(`/Services/Respond To Service Application?serviceApplicationID=${applicationID}&IsAccepted=false&AcceptanceMessage=${encodeURIComponent(message || '')}`),
   
  deleteServiceApplication: (serviceApplicationID) => 
   api.delete('/Services/Delete Service Application', { params: { serviceApplicationID } }), // ✅ صح
