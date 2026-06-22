@@ -1846,8 +1846,8 @@ onClick={async () => {
         </div>
       )}
 
-  
+      </div>);
+};
 
 export default Profile;
-    </div>);
-};
+
