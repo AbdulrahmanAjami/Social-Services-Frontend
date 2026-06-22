@@ -552,6 +552,10 @@ const handleLogout = () => { logout(); setUserMenuOpen(false); navigate('/'); };
     isLoggedIn,
     currentUser: user,
     onApplyClick: (p) => {
+      if (p.userID === user?.userID) {
+        alert('❌ لا يمكنك التقديم على خدماتك!');
+        return;
+      }
       setApplyingToPost({ postID: p.postID, postTitle: p.postTitle, postTypeName: p.postTypeName });
       setShowApplyModal(true);
     },
@@ -1321,20 +1325,6 @@ function PostCard({ post, onEdit, onDelete, onCardClick, isOwner, isLoggedIn, cu
             </span>
           )}
         </div>
-
-        {/* Owner actions */}
-        {isOwner && (
-          <div className="mt-auto flex gap-2 border-t border-slate-100 pt-4">
-            <button onClick={(e) => { e.stopPropagation(); onEdit(post); }}
-              className="flex-1 rounded-xl bg-blue-50 py-2 text-xs font-bold text-blue-700 transition hover:bg-blue-100">
-              ✏️ تعديل
-            </button>
-            <button onClick={(e) => { e.stopPropagation(); onDelete(post.postID); }}
-              className="flex-1 rounded-xl bg-red-50 py-2 text-xs font-bold text-red-600 transition hover:bg-red-100">
-              🗑️ حذف
-            </button>
-          </div>
-        )}
 
         {/* Apply button */}
         {!isOwner && isLoggedIn && !post.isComplete && !isPostLocked(post) && (
