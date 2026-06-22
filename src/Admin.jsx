@@ -732,28 +732,19 @@ const fetchVolunteerApplications = async () => {
 
 
   // ============ FILTERS & SEARCH ============
-
-  const filteredPosts = posts
-
-    .filter((post) => {
-
-      if (postsFilter !== 'all') {
-
-        if (postsFilter === 'active' && post.isLocked) return false;
-
-        if (postsFilter === 'locked' && !post.isLocked) return false;
-
-      }
-
-      return (
-
-        post.title?.toLowerCase().includes(postsSearch.toLowerCase()) ||
-
-        post.description?.toLowerCase().includes(postsSearch.toLowerCase())
-
-      );
-
-    })
+const filteredPosts = posts
+  .filter((post) => {
+    if (postsFilter !== 'all') {
+      if (postsFilter === 'active' && post.isLocked) return false;
+      if (postsFilter === 'locked' && !post.isLocked) return false;
+    }
+    return (
+      post.title?.toLowerCase().includes(postsSearch.toLowerCase()) ||
+      post.description?.toLowerCase().includes(postsSearch.toLowerCase()) ||
+      post.createdBy?.toLowerCase().includes(postsSearch.toLowerCase()) ||
+      post.id?.toString().includes(postsSearch)
+    );
+  })
 
     .sort((a, b) => new Date(b.createdDate) - new Date(a.createdDate));
 
