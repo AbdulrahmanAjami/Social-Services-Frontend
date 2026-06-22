@@ -34,18 +34,19 @@ function Alert({ type, children }) {
 
 // ─── Status badge ─────────────────────────────────────────────────────────────
 function StatusBadge({ status }) {
-  if (status === 'accepted')
+  if (status === 3) // 3 = Accepted
     return (
       <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">
         <CheckCircle className="size-3.5" /> مقبول
       </span>
     );
-  if (status === 'rejected')
+  if (status === 2) // 2 = Rejected
     return (
       <span className="inline-flex items-center gap-1.5 rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-bold text-red-700">
         <XCircle className="size-3.5" /> مرفوض
       </span>
     );
+  // Default to Pending for status 1 or any other value
   return (
     <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-bold text-amber-700">
       <Clock className="size-3.5" /> قيد المراجعة
