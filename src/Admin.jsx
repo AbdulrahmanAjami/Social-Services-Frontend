@@ -743,7 +743,7 @@ const fetchVolunteerApplications = async () => {
 
       return (
         post.createdBy?.toLowerCase().includes(searchUpdate) ||
-        post.userId?.toString().includes(searchUpdate) 
+        post.userID?.toString().includes(searchUpdate) 
       );
     })
 
@@ -1031,7 +1031,7 @@ const fetchVolunteerApplications = async () => {
 
                 currentPostsPage.map((post) => (
 
-                  <tr key={post.id} className="hover:bg-gray-50">
+                  <tr key={post.user} className="hover:bg-gray-50">
 
                     <td className="px-6 py-4 text-gray-700">
                       {post.userID || '-'}
