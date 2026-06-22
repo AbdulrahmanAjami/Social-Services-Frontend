@@ -17,6 +17,12 @@ import { postsAPI, apiBase } from './api';
 import api from './api';
 import { CardSkeleton } from './components/Skeleton';
 import {
+  Plus, Trash2, Edit, Check, Lock, Unlock, AlertCircle,
+  User, Handshake, Sparkles, Home, Search, MapPin, Briefcase,
+  HeartHandshake, X, ChevronDown, Bell, UserCircle, LogOut,
+  CalendarDays, Users, Quote, Star, ArrowLeft, CheckCircle,
+} from 'lucide-react';
+import {
   POST_COMPLETED_EVENT,
   dispatchPostCompleted,
   isPostComplete,
