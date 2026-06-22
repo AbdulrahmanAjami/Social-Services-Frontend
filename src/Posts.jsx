@@ -391,12 +391,13 @@ await fetchFilteredPosts();
 
     setSearchTerm(''); setSelectedCountyID(''); setSelectedProfessionID(''); setActiveTab('all');
     await fetchFilteredPosts();
-    alert('✅ تم إنشاء المنشور بنجاح');
+    showToast('تم إنشاء المنشور بنجاح', 'success');
     setFormData({ PostTitle:'',Description:'',TypeID:1,CountyID:3,ProfessionID:1,imagePath:'',Status:1,Latitude:null,Longitude:null, ServicesRequiredCount: 1 });
     setSelectedCityForForm(null); setSelectedLocation(null); setShowCreateModal(false);
   } catch (err) {
     console.log('Validation errors:', err.response?.data?.errors);
-    alert('❌ فشل في إنشاء المنشور: ' + (err.response?.data?.message || err.message));
+    showToast('فشل في إنشاء المنشور: ' + err.message, 'error');
+
   } finally { setLoading(false); }
 };
 
@@ -431,7 +432,8 @@ const handleUpdatePost = async (e) => {
     setSelectedLocation(null);
     await fetchFilteredPosts();
   } catch (err) {
-    alert('❌ فشل في تحديث المنشور: ' + (err.response?.data?.message || err.message));
+    showToast('فشل في تحديث المنشور: ' + err.message, 'error');
+
   } finally { 
     setLoading(false); 
   }
@@ -446,7 +448,8 @@ const handleUpdatePost = async (e) => {
       setShowConfirmDelete(false); setDeletingPostId(null);
       alert('✅ تم حذف المنشور بنجاح');
     } catch (err) {
-      alert('❌ ' + (err.response?.data?.message || err.response?.data || err.message || 'فشل في حذف المنشور'));
+      showToast('فشل في حذف المنشور: ' + err.message, 'error');
+
     } finally { setLoading(false); }
   };
 
@@ -467,7 +470,8 @@ const handleUpdatePost = async (e) => {
       await postsAPI.lockPost(postID);
       alert('✅ تم قفل المنشور');
       await fetchFilteredPosts();
-    } catch (err) { alert('❌ ' + (err.response?.data?.message || err.message)); }
+    } catch (err) { showToast('فشل في قفل المنشور: ' + err.message, 'error');
+ }
     finally { setLoading(false); }
   };
 
@@ -600,7 +604,8 @@ const handleLogout = () => { logout(); setUserMenuOpen(false); navigate('/'); };
     currentUser: user,
     onApplyClick: (p) => {
       if (p.userID === user?.userID) {
-        alert('❌ لا يمكنك التقديم على خدماتك!');
+        showToast('لا يمكنك التقديم على خدماتك ' + err.message, 'error');
+
         return;
       }
       setApplyingToPost({ postID: p.postID, postTitle: p.postTitle, postTypeName: p.postTypeName });
@@ -1385,7 +1390,8 @@ function PostCard({ post, onEdit, onDelete, onCardClick, isOwner, isLoggedIn, cu
       onClick={(e) => { 
         e.stopPropagation(); 
         if (isOwner) {
-          alert('❌ لا يمكنك التقديم على خدماتك!');
+          showToast('لا يمكنك التقديم على خدماتك ' + err.message, 'error');
+
           return;
         }
         onApplyClick(post); 
@@ -1459,7 +1465,8 @@ function ServiceDetailsModal({ service, isLoggedIn,currentUser, onClose, onApply
   <button 
     onClick={() => {
       if (service.userID === currentUser?.userID) {
-        alert('❌ لا يمكنك التقديم على خدماتك!');
+        showToast('لا يمكنك التقديم على خدماتك ' + err.message, 'error');
+
         return;
       }
       onApply(service);
