@@ -45,6 +45,7 @@ function LocationSelector({ location, onSelect }) {
   return location ? <Marker position={location} /> : null;
 }
 
+
 function Toast({ message, type, onClose }) {
   const isSuccess = type === 'success';
   useEffect(() => {
@@ -116,9 +117,7 @@ function Reveal({ children, delay = 0, className = '' }) {
 }
 
 
-  // ── Toast state ────────────────────────────────────────────────────────────
-  const [toast, setToast] = useState(null);
-  const showToast = (message, type = 'success') => setToast({ message, type });
+
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // MAIN COMPONENT
@@ -127,6 +126,10 @@ function Posts() {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const isLoggedIn = !!user;
+
+    // ── Toast state ────────────────────────────────────────────────────────────
+  const [toast, setToast] = useState(null);
+  const showToast = (message, type = 'success') => setToast({ message, type });
 
   // ── State ──────────────────────────────────────────────────────────────────
   const [posts, setPosts]                         = useState([]);
