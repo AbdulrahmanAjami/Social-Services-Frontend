@@ -4,7 +4,7 @@ import {
   Plus, Trash2, Edit, Check, Lock, Unlock, AlertCircle,
   User, Handshake, Sparkles, Home, Search, MapPin, Briefcase,
   HeartHandshake, X, ChevronDown, Bell, UserCircle, LogOut,
-  CalendarDays, Users, Quote, Star, ArrowLeft,
+  CalendarDays, Users, Quote, Star, ArrowLeft, CheckCircle,
 } from 'lucide-react';
 import axios from 'axios';
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
@@ -17,12 +17,6 @@ import { postsAPI, apiBase } from './api';
 import api from './api';
 import { CardSkeleton } from './components/Skeleton';
 import {
-  Plus, Trash2, Edit, Check, Lock, Unlock, AlertCircle,
-  User, Handshake, Sparkles, Home, Search, MapPin, Briefcase,
-  HeartHandshake, X, ChevronDown, Bell, UserCircle, LogOut,
-  CalendarDays, Users, Quote, Star, ArrowLeft, CheckCircle,
-} from 'lucide-react';
-import {
   POST_COMPLETED_EVENT,
   dispatchPostCompleted,
   isPostComplete,
@@ -34,7 +28,6 @@ import {
   DEFAULT_POST_IMAGE,
   normalizePost,
 } from './postUtils';
-
 // Fix Leaflet default marker icons for Vite
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
