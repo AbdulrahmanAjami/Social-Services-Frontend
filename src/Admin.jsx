@@ -1119,21 +1119,7 @@ const fetchVolunteerApplications = async () => {
 
                               🔒
 
-                            </button>
 
-                            <button
-
-                              onClick={() => handleCompletePost(post.id)}
-
-                              className="p-2 hover:bg-green-50 rounded-lg transition-colors text-green-600 hover:text-green-700"
-
-                              title="إكمال المنشور"
-
-                            >
-
-                              ✓
-
-                            </button>
 
                           </>
 
