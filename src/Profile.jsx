@@ -1373,7 +1373,7 @@ onClick={async () => {
     {/* Cancel application button */}
     <div className="mt-4 flex justify-end">
       <button
-        onClick={() => handleCancelApplication(s.serviceApplicationID)}
+        onClick={() => handleCancelApplication(s.applicationID)}
         className="inline-flex items-center gap-2 rounded-xl bg-red-50 px-4 py-2 text-sm font-bold text-red-600 transition hover:bg-red-100"
       >
         <XCircle className="size-4" /> إلغاء التقديم
