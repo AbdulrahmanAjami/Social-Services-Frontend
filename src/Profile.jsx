@@ -34,13 +34,13 @@ function Alert({ type, children }) {
 
 // ─── Status badge ─────────────────────────────────────────────────────────────
 function StatusBadge({ status }) {
-  if (status === 3) // 3 = Accepted
+  if (status === 3) // 
     return (
       <span className="inline-flex items-center gap-1.5 rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-bold text-red-700">
         <XCircle className="size-3.5" /> مرفوض
       </span>
     );
-  if (status === 2) // 2 = Rejected
+  if (status === 2) // 
     return (
       <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">
         <CheckCircle className="size-3.5" /> مقبول
