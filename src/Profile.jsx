@@ -244,12 +244,10 @@ setAppliedServices(services.map(s => {
   // Map the numeric status code coming from the backend to the string values
   // the rest of the UI (StatusBadge, filters, etc.) expects.
   // Backend: 1 = Pending, 2 = Rejected, 3 = Accepted
-let status = 'pending';
-if (app.status === 3) status = 'accepted';
-else if (app.status === 2) status = 'rejected';
-else if (app.status === 1) status = 'pending';
-else if (app.accepted === true) status = 'accepted';
-else if (app.accepted === false && acceptanceMessage) status = 'rejected';
+  let status = 'pending';
+  if (s.status === 3) status = 'accepted';
+  else if (s.status === 2) status = 'rejected';
+  else if (s.status === 1) status = 'pending';
 
   return {
     id: s.serviceApplicationID,
@@ -284,51 +282,52 @@ setAppliedServices(prev => prev.filter(s => s.applicationID !== serviceApplicati
     }
   };
 
-const fetchApplicants = async (postId) => {
-  setApplicantsLoading(true); setApplicantsError('');
-  try {
-    const response = await servicesAPI.getServiceApplicationsForPost(postId);
-    let formatted = Array.isArray(response.data) ? response.data.map(app => {
-      const id = app.applicationID || app.serviceApplicationID || app.id || app.ApplicationID;
-      const userID = app.userID || app.userId || app.UserID;
-      const acceptanceMessage = app.acceptanceMessage || app.message || app.responseMessage || '';
-
-      let status = 'pending';
-      if (app.status === 3) status = 'accepted';
-      else if (app.status === 2) status = 'rejected';
-      else if (app.status === 1) status = 'pending';
-      else if (app.accepted === true) status = 'accepted';
-      else if (app.accepted === false && acceptanceMessage) status = 'rejected';
-
-      return {
-        id, userID, status, accepted: app.accepted, acceptanceMessage,
-        name: app.userName || app.userFullName || 'مستخدم بدون اسم',
-        email: app.userEmail || 'غير متوفر',
-        phone: app.userPhone || 'غير متوفر',
-        appliedDate: app.applicationDateTime || app.applicationDate || new Date().toISOString(),
-        description: app.description || 'لا يوجد وصف',
-      };
-    }) : [];
-
-    const withDetails = await Promise.all(formatted.map(async (a) => {
-      if (!a.userID) return a;
-      try {
-        const r = await userAPI.getUserByUserID(a.userID);
-        const d = r.data;
+  const fetchApplicants = async (postId) => {
+    setApplicantsLoading(true); setApplicantsError('');
+    try {
+      const response = await servicesAPI.getServiceApplicationsForPost(postId);
+      console.log('Applicants response:', response.data);
+      let formatted = Array.isArray(response.data) ? response.data.map(app => {
+        const id = app.applicationID || app.serviceApplicationID || app.id || app.ApplicationID;
+        const userID = app.userID || app.userId || app.UserID;
+        const acceptanceMessage = app.acceptanceMessage || app.message || app.responseMessage || '';
+        let status = 'pending';
+        if (app.accepted === true) status = 'accepted';
+        else if (app.accepted === false && acceptanceMessage) status = 'rejected';
+        console.log(`Applicant ${id}: accepted=${app.accepted}, status=${status}`);
         return {
-          ...a,
-          name: d.firstName && d.lastName ? `${d.firstName} ${d.secondName || ''} ${d.lastName}`.trim() : d.username || a.name,
-          username: d.username || a.username || null,
-          email: d.email || a.email, phone: d.phone || a.phone,
+          id, userID, status, accepted: app.accepted, acceptanceMessage,
+          name: app.firstName && app.lastName ? `${app.firstName} ${app.secondName || ''} ${app.lastName}`.trim() : app.username || app.name,
+          username: app.username || app.name || null,
+          email: app.email || app.userEmail || 'غير متوفر',
+          phone: app.phone || app.userPhone || 'غير متوفر',
+          appliedDate: app.applicationDateTime || app.applicationDate || new Date().toISOString(),
+          description: app.description || 'لا يوجد وصف',
         };
-      } catch { return a; }
-    }));
-    setApplicants(withDetails);
+      }) : [];
+
+      const withDetails = await Promise.all(formatted.map(async (a) => {
+  if (!a.userID) return a;
+       try {
+    const r = await userAPI.getUserByUserID(a.userID);
+    const d = r.data;
+    return {
+      ...a,
+      name: d.firstName && d.lastName ? `${d.firstName} ${d.secondName || ''} ${d.lastName}`.trim() : d.username || a.name,
+      username: d.username || a.username || null,
+      email: d.email || a.email, phone: d.phone || a.phone,
+    };
   } catch (err) {
-    setApplicantsError(err.response?.data?.message || err.message || 'فشل في جلب المتقدمين');
-    setApplicants([]);
-  } finally { setApplicantsLoading(false); }
-};
+    console.error(`Error fetching user details for userID ${a.userID}:`, err);
+    return a;
+  }
+}));
+      setApplicants(withDetails);
+    } catch (err) {
+      setApplicantsError(err.response?.data?.message || err.message || 'فشل في جلب المتقدمين');
+      setApplicants([]);
+    } finally { setApplicantsLoading(false); }
+  };
 
   const fetchCounties = async () => {
     try {
