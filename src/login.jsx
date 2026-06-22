@@ -190,12 +190,6 @@ const handleSubmit = async (e) => {
               </div>
             </div>
 
-            {/* Forgot password */}
-            <div className="flex justify-start">
-              <Link to="/forgot-password" className="text-xs font-semibold text-emerald-600 transition hover:text-emerald-700 hover:underline">
-                نسيت كلمة المرور؟
-              </Link>
-            </div>
 
             {/* Submit */}
             <button type="submit" disabled={loading || success}
