@@ -34,19 +34,25 @@ function Alert({ type, children }) {
 
 // ─── Status badge ─────────────────────────────────────────────────────────────
 function StatusBadge({ status }) {
-  if (status === 3) // 
+  // Handle both numeric (1,2,3) and string ('pending','accepted','rejected') values
+  const isRejected = status === 3 || status === 'rejected';
+  const isAccepted = status === 2 || status === 'accepted';
+  
+  if (isRejected) {
     return (
       <span className="inline-flex items-center gap-1.5 rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-bold text-red-700">
         <XCircle className="size-3.5" /> مرفوض
       </span>
     );
-  if (status === 2) // 
+  }
+  if (isAccepted) {
     return (
       <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">
         <CheckCircle className="size-3.5" /> مقبول
       </span>
     );
-  // Default to Pending for status 1 or any other value
+  }
+  // Default to Pending for status 1, 'pending', or any other value
   return (
     <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-bold text-amber-700">
       <Clock className="size-3.5" /> قيد المراجعة
@@ -227,6 +233,14 @@ const Profile = () => {
     try {
       const response = await servicesAPI.getServiceApplicationsForUser(user.username);
       const services = Array.isArray(response.data) ? response.data : [];
+      
+      // Log raw API response to debug status field
+      console.log('📊 Raw API Response (Applied Services):', services);
+      if (services.length > 0) {
+        console.log('🔍 First service object keys:', Object.keys(services[0]));
+        console.log('🔍 First service full object:', services[0]);
+      }
+      
       let allPosts = {};
       try {
         const postsResponse = await postsAPI.getFilteredPosts({});
@@ -245,7 +259,7 @@ setAppliedServices(services.map(s => {
   // Map the numeric status code coming from the backend to the string values
   // the rest of the UI (StatusBadge, filters, etc.) expects.
   // Backend: 1 = Pending, 2 = Accepted, 3 = Rejected
-  let status = ''; // Default status
+  let status = 'pending'; // Default status
   if (s.status === 1) {
     status = 'pending';
   } else if (s.status === 2) {
@@ -253,6 +267,8 @@ setAppliedServices(services.map(s => {
   } else if (s.status === 3) {
     status = 'rejected';
   }
+  
+  console.log(`📋 Service ${s.serviceApplicationID}: status=${s.status}, mapped to="${status}"`);
 
   return {
     id: s.serviceApplicationID,
