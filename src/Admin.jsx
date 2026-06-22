@@ -513,8 +513,7 @@ const getAdminIdFromToken = () => {
 
         // Block user
 
-        await adminApi.put('/Admin/BlockUser', { userID: userId });
-
+        await adminApi.put('/Admin/BlockUser', null, { params: { UserID: userId } });
         setUsers(users.map(u => u.id === userId ? { ...u, isActive: false } : u));
 
         alert('تم تعطيل حساب المستخدم بنجاح');
