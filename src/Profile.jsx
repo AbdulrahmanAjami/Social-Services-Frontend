@@ -740,7 +740,6 @@ const openApplicantFeedback = async (applicant) => {
           {[
             { label: 'نقطة تطوع',    value: userStats.points,             sub: 'النقاط',      color: 'from-violet-500 to-purple-600', text: 'text-violet-600', icon: Sparkles },
             { label: 'خدمة تطوعية',  value: userStats.participationCount, sub: 'المشاركات',   color: 'from-emerald-500 to-teal-600',  text: 'text-emerald-600', icon: CheckCircle },
-            { label: 'ساعة عمل',     value: userStats.volunteerHours,     sub: 'الساعات',     color: 'from-cyan-500 to-blue-600',     text: 'text-cyan-600',    icon: Clock },
             { label: '/5',          value:(Number(userAverageRating) || 0).toFixed(1), sub: 'التقييم',     color: 'from-teal-500 to-emerald-600',  text: 'text-teal-600',    icon: CheckCircle, isRating: true },
           ].map(({ label, value, sub, color, text, icon: Icon, isRating }) => (
             <div key={sub} className="flex flex-col gap-3 rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
