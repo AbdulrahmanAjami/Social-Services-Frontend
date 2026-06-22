@@ -1494,8 +1494,7 @@ const Admin = () => {
           <tbody className="divide-y">
 
             {userLogs.length > 0 ? (
-
-              userLogs.map((log, idx) => (
+              [...userLogs].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).map((log, idx) => (
 
                 <tr key={idx} className="hover:bg-gray-50">
 
@@ -1566,8 +1565,7 @@ const Admin = () => {
           <tbody className="divide-y">
 
             {postLogs.length > 0 ? (
-
-              postLogs.map((log, idx) => (
+              [...postLogs].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).map((log, idx) => (
 
                 <tr key={idx} className="hover:bg-gray-50">
 
@@ -1638,8 +1636,7 @@ const Admin = () => {
           <tbody className="divide-y">
 
             {loginLogs.length > 0 ? (
-
-              loginLogs.map((log, idx) => (
+              [...loginLogs].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).map((log, idx) => (
 
                 <tr key={idx} className="hover:bg-gray-50">
 
