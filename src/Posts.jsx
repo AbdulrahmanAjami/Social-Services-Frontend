@@ -279,7 +279,7 @@ const handleImageFileChange = async (e) => {
     setImageUploading(true);
     setFormData((prev) => ({ ...prev, imageFile: file })); // احفظ الـ file مباشرة
   } catch (err) {
-    alert(err.message || 'تعذّر تحميل الصورة');
+    showToast(err.message || 'تعذّر تحميل الصورة', 'error');
   } finally {
     setImageUploading(false);
     e.target.value = '';
@@ -367,7 +367,7 @@ const fetchProfessions = async () => {
 const handleCreatePost = async (e) => {
   e.preventDefault();
   
-  if (!isLoggedIn) { alert('يجب تسجيل الدخول أولاً'); navigate('/login'); return; }
+  if (!isLoggedIn) { showToast('يجب تسجيل الدخول أولاً', 'error'); navigate('/login'); return; }
   try {
     setLoading(true);
     
@@ -424,7 +424,7 @@ const handleUpdatePost = async (e) => {
       headers: { 'Content-Type': 'multipart/form-data' }
     });
 
-    alert('✅ تم تحديث المنشور بنجاح');
+    showToast('تم تحديث المنشور بنجاح', 'success');
     setShowEditModal(false); 
     setEditingPost(null);
     setFormData({ PostTitle:'', Description:'', TypeID:1, CountyID:3, ProfessionID:1, imagePath:'', Status:1, Latitude:null, Longitude:null });
@@ -446,7 +446,7 @@ const handleUpdatePost = async (e) => {
       await postsAPI.deletePost(deletingPostId);
       setPosts(posts.filter(p => p.postID !== deletingPostId));
       setShowConfirmDelete(false); setDeletingPostId(null);
-      alert('✅ تم حذف المنشور بنجاح');
+      showToast('تم حذف المنشور بنجاح', 'success');
     } catch (err) {
       showToast('فشل في حذف المنشور: ' + err.message, 'error');
 
@@ -459,8 +459,8 @@ const handleUpdatePost = async (e) => {
       await postsAPI.completePost(postID);
       setPosts((prev) => prev.filter((p) => p.postID !== postID));
       dispatchPostCompleted(postID);
-      alert('✅ تم إكمال المنشور');
-    } catch (err) { alert('❌ ' + (err.response?.data?.message || err.message)); }
+      showToast('تم إكمال المنشور', 'success');
+    } catch (err) { showToast((err.response?.data?.message || err.message), 'error'); }
     finally { setLoading(false); }
   };
 
@@ -468,7 +468,7 @@ const handleUpdatePost = async (e) => {
     try {
       setLoading(true);
       await postsAPI.lockPost(postID);
-      alert('✅ تم قفل المنشور');
+      showToast('تم قفل المنشور', 'success');
       await fetchFilteredPosts();
     } catch (err) { showToast('فشل في قفل المنشور: ' + err.message, 'error');
  }
@@ -479,9 +479,9 @@ const handleUpdatePost = async (e) => {
     try {
       setLoading(true);
       await postsAPI.unlockPost(postID);
-      alert('✅ تم فتح المنشور');
+      showToast('تم فتح المنشور', 'success');
       await fetchFilteredPosts();
-    } catch (err) { alert('❌ ' + (err.response?.data?.message || err.message)); }
+    } catch (err) { showToast((err.response?.data?.message || err.message), 'error'); }
     finally { setLoading(false); }
   };
 
@@ -495,9 +495,9 @@ const handleUpdatePost = async (e) => {
       await api.post('/Services/Create Service Application', applicationData);
       setAppliedPosts(prev => new Set([...prev, applyingToPost.postID]));
       setShowApplyModal(false); setApplyMessage(''); setApplyingToPost(null);
-      alert('✅ تم التقدم بنجاح!');
+      showToast('تم التقدم بنجاح!', 'success');
     } catch (error) {
-      alert('❌ ' + (error.response?.data?.message || error.response?.data || error.message || 'فشل في التقديم على الخدمة'));
+      showToast((error.response?.data?.message || error.response?.data || error.message || 'فشل في التقديم على الخدمة'), 'error');
     } finally { setLoading(false); }
   };
 
@@ -538,7 +538,7 @@ setAiRecommendations(recommended);
     });
     setIsVolunteer(false);
     setVolunteerAppID(null);
-    alert('✅ تم حذف الطلب بنجاح');
+    showToast('تم حذف الطلب بنجاح', 'success');
 
   } catch (error) {
   console.log('Volunteer error status:', error.response?.status);

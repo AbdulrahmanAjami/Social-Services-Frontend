@@ -244,7 +244,7 @@ setAppliedServices(services.map(s => {
 
   // Map the numeric status code coming from the backend to the string values
   // the rest of the UI (StatusBadge, filters, etc.) expects.
-  // Backend: 1 = Pending, 2 = Rejected, 3 = Accepted
+  // Backend: 1 = Pending, 2 = Accepted, 3 = Rejected
   let status = ''; // Default status
   if (s.status === 1) {
     status = 'pending';
