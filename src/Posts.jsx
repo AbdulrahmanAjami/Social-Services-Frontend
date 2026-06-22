@@ -1193,6 +1193,7 @@ const handleLogout = () => { logout(); setUserMenuOpen(false); navigate('/'); };
         <ServiceDetailsModal
           service={selectedService}
           isLoggedIn={isLoggedIn}
+          currentUser={user}
           onClose={() => setShowServiceModal(false)}
           onApply={(post) => {
             setShowServiceModal(false);
@@ -1326,22 +1327,31 @@ function PostCard({ post, onEdit, onDelete, onCardClick, isOwner, isLoggedIn, cu
           )}
         </div>
 
-        {/* Apply button */}
-        {!isOwner && isLoggedIn && !post.isComplete && !isPostLocked(post) && (
-          <div className="mt-auto border-t border-slate-100 pt-4">
-            <button
-              onClick={(e) => { e.stopPropagation(); onApplyClick(post); }}
-              disabled={hasApplied}
-              className={`w-full rounded-2xl py-2.5 text-sm font-bold transition ${
-                hasApplied
-                  ? 'cursor-not-allowed bg-slate-100 text-slate-400'
-                  : 'bg-emerald-600 text-white hover:bg-emerald-700 hover:shadow-md hover:shadow-emerald-600/20'
-              }`}
-            >
-              {hasApplied ? '✅ تم التقدم' : 'تقدم للخدمة'}
-            </button>
-          </div>
-        )}
+{/* Apply button */}
+{isLoggedIn && !post.isComplete && !isPostLocked(post) && (
+  <div className="mt-auto border-t border-slate-100 pt-4">
+    <button
+      onClick={(e) => { 
+        e.stopPropagation(); 
+        if (isOwner) {
+          alert('❌ لا يمكنك التقديم على خدماتك!');
+          return;
+        }
+        onApplyClick(post); 
+      }}
+      disabled={hasApplied}
+      className={`w-full rounded-2xl py-2.5 text-sm font-bold transition ${
+        hasApplied
+          ? 'cursor-not-allowed bg-slate-100 text-slate-400'
+          : isOwner
+          ? 'cursor-not-allowed bg-slate-100 text-slate-400'
+          : 'bg-emerald-600 text-white hover:bg-emerald-700 hover:shadow-md hover:shadow-emerald-600/20'
+      }`}
+    >
+      {hasApplied ? '✅ تم التقدم' : isOwner ? '🚫 منشورك الخاص' : 'تقدم للخدمة'}
+    </button>
+  </div>
+)}
       </div>
     </article>
   );
@@ -1350,7 +1360,7 @@ function PostCard({ post, onEdit, onDelete, onCardClick, isOwner, isLoggedIn, cu
 // ═══════════════════════════════════════════════════════════════════════════════
 // ServiceDetailsModal component
 // ═══════════════════════════════════════════════════════════════════════════════
-function ServiceDetailsModal({ service, isLoggedIn, onClose, onApply, onLoginRequired }) {
+function ServiceDetailsModal({ service, isLoggedIn,currentUser, onClose, onApply, onLoginRequired }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm" onClick={onClose}>
       <div
@@ -1394,12 +1404,24 @@ function ServiceDetailsModal({ service, isLoggedIn, onClose, onApply, onLoginReq
 
           <p className="mb-6 leading-relaxed text-slate-600">{service.description}</p>
 
-          {!service.isComplete && !isPostLocked(service) && isLoggedIn && (
-            <button onClick={() => onApply(service)}
-              className="w-full rounded-2xl bg-emerald-600 py-3.5 font-bold text-white transition hover:bg-emerald-700 hover:shadow-lg hover:shadow-emerald-600/20">
-              التقديم للخدمة
-            </button>
-          )}
+{!service.isComplete && !isPostLocked(service) && isLoggedIn && (
+  <button 
+    onClick={() => {
+      if (service.userID === currentUser?.userID) {
+        alert('❌ لا يمكنك التقديم على خدماتك!');
+        return;
+      }
+      onApply(service);
+    }}
+    className={`w-full rounded-2xl py-3.5 font-bold transition ${
+      service.userID === currentUser?.userID
+        ? 'cursor-not-allowed bg-slate-100 text-slate-400'
+        : 'bg-emerald-600 text-white hover:bg-emerald-700 hover:shadow-lg hover:shadow-emerald-600/20'
+    }`}
+  >
+    {service.userID === currentUser?.userID ? '🚫 منشورك الخاص' : 'التقديم للخدمة'}
+  </button>
+)}
           {!service.isComplete && !isPostLocked(service) && !isLoggedIn && (
             <button onClick={onLoginRequired}
               className="w-full rounded-2xl bg-slate-200 py-3.5 font-bold text-slate-700 transition hover:bg-slate-300">
