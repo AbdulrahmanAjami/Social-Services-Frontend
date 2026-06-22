@@ -615,6 +615,10 @@ const handleLogout = () => { logout(); setUserMenuOpen(false); navigate('/'); };
   return (
     <div className="min-h-screen bg-white" dir="rtl">
 
+
+    <div className="min-h-screen bg-white" dir="rtl">
+    {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+      
       {/* ━━━━ HEADER ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
       <header className={`sticky top-0 z-50 border-b border-slate-200/60 transition-all duration-300 ${
         scrolled ? 'bg-white/95 backdrop-blur-md shadow-sm' : 'bg-white/80 backdrop-blur-md'
