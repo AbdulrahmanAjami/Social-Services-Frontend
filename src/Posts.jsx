@@ -45,6 +45,45 @@ function LocationSelector({ location, onSelect }) {
   return location ? <Marker position={location} /> : null;
 }
 
+function Toast({ message, type, onClose }) {
+  const isSuccess = type === 'success';
+  useEffect(() => {
+    const t = setTimeout(onClose, 3500);
+    return () => clearTimeout(t);
+  }, []);
+  return (
+    <div
+      dir="rtl"
+      className={`fixed top-6 left-1/2 z-[9999] flex min-w-[300px] max-w-sm items-center gap-3 rounded-2xl bg-white px-5 py-4 shadow-2xl border-r-4 ${
+        isSuccess ? 'border-emerald-500' : 'border-rose-500'
+      }`}
+      style={{
+        transform: 'translateX(-50%)',
+        animation: 'toastSlide 0.35s cubic-bezier(0.34,1.56,0.64,1)',
+      }}
+    >
+      {isSuccess
+        ? <CheckCircle className="size-5 shrink-0 text-emerald-500" />
+        : <AlertCircle className="size-5 shrink-0 text-rose-500" />}
+      <p className="flex-1 text-sm font-bold text-slate-800">{message}</p>
+      <button
+        onClick={onClose}
+        className="text-slate-300 transition hover:text-slate-600"
+      >
+        <X className="size-4" />
+      </button>
+      <style>{`
+        @keyframes toastSlide {
+          from { opacity: 0; transform: translateX(-50%) translateY(-18px) scale(0.95); }
+          to   { opacity: 1; transform: translateX(-50%) translateY(0)      scale(1);    }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+
+
 // ─── Constants ───────────────────────────────────────────────────────────────
 
 const VOLUNTARY_POST_TYPE_ID = 1;
