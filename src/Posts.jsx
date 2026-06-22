@@ -370,12 +370,10 @@ const handleUpdatePost = async (e) => {
     form.append('Data.Status', formData.Status);
     if (formData.Latitude) form.append('Data.Latitude', formData.Latitude);
     if (formData.Longitude) form.append('Data.Longitude', formData.Longitude);
-    console.log('Update Post Data:');
-for (let [key, value] of form.entries()) {
-  console.log(key, value);
-}
+
     await api.put('/Posts/Update Post', form, {
       params: { ImageChanged: false },
+      headers: { 'Content-Type': 'multipart/form-data' }
     });
 
     alert('✅ تم تحديث المنشور بنجاح');
