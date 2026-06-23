@@ -174,6 +174,7 @@ const Profile = () => {
 
   // Post form
   const [postFormData, setPostFormData] = useState({ postID: 0, postTitle: '', description: '', countyID: '', imagePath: '', servicesRequiredCount: '', price: '', latitude: '', longitude: '' });
+  const [postImageFile, setPostImageFile] = useState(null);
   const [counties, setCounties]               = useState([]);
   const [loadingCounties, setLoadingCounties] = useState(false);
   const [editPostError, setEditPostError]     = useState('');
@@ -243,6 +244,7 @@ const Profile = () => {
     if (!file) return;
     try {
       setPostImageUploading(true);
+      setPostImageFile(file);
       const dataUrl = await fileToCompressedDataUrl(file);
       setPostFormData((prev) => ({ ...prev, imagePath: dataUrl }));
     } catch (err) { setEditPostError(err.message || 'تعذّر تحميل الصورة'); }
@@ -547,7 +549,6 @@ const handleDeletePost = async () => {
       PostTitle: postFormData.postTitle.trim(),
       Description: postFormData.description.trim(),
       CountyID: Number(postFormData.countyID),
-      ImagePath: postFormData.imagePath?.trim() || '',
       ServicesRequiredCount: Number(postFormData.servicesRequiredCount) || 0,
       Price: Number(postFormData.price) || 0,
       Latitude: Number(postFormData.latitude) || 0,
@@ -558,6 +559,10 @@ const handleDeletePost = async () => {
     Object.entries(data).forEach(([key, value]) => {
       form.append(`data.${key}`, value ?? '');
     });
+
+    if (postImageFile) {
+      form.append('Image', postImageFile);
+    }
 
     try {
       const response = await fetch(`${API_BASE_URL}/Posts/Update Post`, {
@@ -574,10 +579,11 @@ const handleDeletePost = async () => {
       const selectedCounty = counties.find(c => c.countyID === data.CountyID);
       setUserPosts(prev => prev.map(post =>
         post.postID === data.PostID
-          ? { ...post, postTitle: data.PostTitle, description: data.Description, imagePath: data.ImagePath, countyID: data.CountyID, servicesRequiredCount: data.ServicesRequiredCount, price: data.Price, latitude: data.Latitude, longitude: data.Longitude, countyName: selectedCounty?.countyName || post.countyName }
+          ? { ...post, postTitle: data.PostTitle, description: data.Description, countyID: data.CountyID, servicesRequiredCount: data.ServicesRequiredCount, price: data.Price, latitude: data.Latitude, longitude: data.Longitude, countyName: selectedCounty?.countyName || post.countyName }
           : post
       ));
       setShowEditPostModal(false); setSelectedPost(null);
+      setPostImageFile(null);
       setSuccess('✅ تم تحديث الخدمة بنجاح'); setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
       const msg = err.message || 'فشل تحديث الخدمة';
@@ -693,6 +699,7 @@ const openApplicantFeedback = async (applicant) => {
   // ── Modal openers ─────────────────────────────────────────────────────────
   const openEditModal = (post) => {
     setSelectedPost(post); setEditPostError('');
+    setPostImageFile(null);
     setPostFormData({ postID: post.postID, postTitle: post.postTitle || '', description: post.description || '', countyID: post.countyID ? String(post.countyID) : '', imagePath: getRawImagePath(post) || '', servicesRequiredCount: post.servicesRequiredCount || '', price: post.price || '', latitude: post.latitude || '', longitude: post.longitude || '' });
     if (counties.length === 0) fetchCounties();
     setShowEditPostModal(true);
@@ -1684,7 +1691,7 @@ onClick={async () => {
           <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-3xl bg-white shadow-2xl">
             <div className="sticky top-0 flex items-center justify-between rounded-t-3xl bg-emerald-600 px-6 py-4">
               <h2 className="text-lg font-black text-white">تعديل الخدمة</h2>
-              <button onClick={() => { setShowEditPostModal(false); setSelectedPost(null); setEditPostError(''); }}
+              <button onClick={() => { setShowEditPostModal(false); setSelectedPost(null); setEditPostError(''); setPostImageFile(null); }}
                 className="flex size-9 items-center justify-center rounded-full bg-white/20 text-white transition hover:bg-white/30">
                 <X className="size-5" />
               </button>
@@ -1761,7 +1768,7 @@ onClick={async () => {
                   className="flex-1 rounded-2xl bg-emerald-600 py-3 font-bold text-white transition hover:bg-emerald-700 disabled:opacity-50">
                   {loading ? 'جاري الحفظ...' : 'حفظ التعديلات'}
                 </button>
-                <button type="button" onClick={() => { setShowEditPostModal(false); setSelectedPost(null); setEditPostError(''); }} disabled={loading}
+                <button type="button" onClick={() => { setShowEditPostModal(false); setSelectedPost(null); setEditPostError(''); setPostImageFile(null); }} disabled={loading}
                   className="flex-1 rounded-2xl bg-slate-100 py-3 font-bold text-slate-700 transition hover:bg-slate-200 disabled:opacity-50">
                   إلغاء
                 </button>
