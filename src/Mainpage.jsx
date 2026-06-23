@@ -175,6 +175,7 @@ const Mainpage = () => {
   const [notificationsError, setNotificationsError] = useState('');
   const userRef = useRef(null);
   const notificationsRef = useRef(null);
+  const previousNotificationsCountRef = useRef(0);
 
   // ── same auth logic as original ──────────────────────────────────────────
   const { user, logout, accessToken } = useAuth();
@@ -194,8 +195,29 @@ const Mainpage = () => {
     navigate('/');
   };
 
-  // ── Notifications API handlers ───────────────────────────────────────────
-  const API_BASE_URL = 'https://yousefalhamad-001-site1.ltempurl.com/api';
+  // ── Play notification sound ──────────────────────────────────────────────
+  const playNotificationSound = () => {
+    try {
+      // Create a simple beep sound using Web Audio API
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+
+      oscillator.frequency.value = 800; // 800 Hz beep
+      oscillator.type = 'sine';
+
+      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 0.5);
+    } catch (err) {
+      console.log('صوت الإشعار غير متاح');
+    }
+  };
 
   const fetchNotifications = async () => {
     if (!user?.username || !accessToken) return;
@@ -314,6 +336,15 @@ const Mainpage = () => {
     document.addEventListener('mousedown', onClick);
     return () => document.removeEventListener('mousedown', onClick);
   }, [userMenuOpen]);
+
+  // Monitor for new notifications and play sound
+  useEffect(() => {
+    if (notifications.length > previousNotificationsCountRef.current) {
+      console.log('🔔 إشعار جديد! تشغيل الصوت...');
+      playNotificationSound();
+    }
+    previousNotificationsCountRef.current = notifications.length;
+  }, [notifications]);
 
   // =========================================================================
   // RENDER
@@ -456,13 +487,17 @@ const Mainpage = () => {
                                     {notification.description}
                                   </p>
                                   <p className="mt-1 text-xs text-slate-500">
-                                    {new Date(notification.createdDate).toLocaleString('ar-JO', {
-                                      year: 'numeric',
-                                      month: 'short',
-                                      day: 'numeric',
-                                      hour: '2-digit',
-                                      minute: '2-digit',
-                                    })}
+                                    {(() => {
+                                      const date = new Date(notification.createdDate);
+                                      date.setHours(date.getHours() - 2);
+                                      return date.toLocaleString('ar-JO', {
+                                        year: 'numeric',
+                                        month: 'short',
+                                        day: 'numeric',
+                                        hour: '2-digit',
+                                        minute: '2-digit',
+                                      });
+                                    })()}
                                   </p>
                                   {!notification.isViewed && (
                                     <span className="mt-2 inline-block text-xs font-semibold text-emerald-600 bg-emerald-100 px-2 py-1 rounded">
