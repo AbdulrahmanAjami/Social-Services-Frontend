@@ -112,7 +112,7 @@ const Profile = () => {
   const [messageData, setMessageData] = useState({ applicantId: null, action: '', message: '', isEdit: false });
 
   // Post form
-  const [postFormData, setPostFormData] = useState({ postID: 0, postTitle: '', description: '', countyID: '', imagePath: '' });
+  const [postFormData, setPostFormData] = useState({ postID: 0, postTitle: '', description: '', countyID: '', imagePath: '', servicesRequiredCount: '', price: '', latitude: '', longitude: '' });
   const [counties, setCounties]               = useState([]);
   const [loadingCounties, setLoadingCounties] = useState(false);
   const [editPostError, setEditPostError]     = useState('');
@@ -483,13 +483,17 @@ const handleDeletePost = async () => {
       postID: postFormData.postID, userID,
       postTitle: postFormData.postTitle.trim(), description: postFormData.description.trim(),
       countyID: Number(postFormData.countyID), imagePath: postFormData.imagePath?.trim() || '',
+      servicesRequiredCount: Number(postFormData.servicesRequiredCount) || 0,
+      price: Number(postFormData.price) || 0,
+      latitude: Number(postFormData.latitude) || 0,
+      longitude: Number(postFormData.longitude) || 0,
     };
     try {
       await postsAPI.updatePost(payload);
       const selectedCounty = counties.find(c => c.countyID === payload.countyID);
       setUserPosts(prev => prev.map(post =>
         post.postID === payload.postID
-          ? { ...post, postTitle: payload.postTitle, description: payload.description, imagePath: payload.imagePath, countyID: payload.countyID, countyName: selectedCounty?.countyName || post.countyName }
+          ? { ...post, postTitle: payload.postTitle, description: payload.description, imagePath: payload.imagePath, countyID: payload.countyID, servicesRequiredCount: payload.servicesRequiredCount, price: payload.price, latitude: payload.latitude, longitude: payload.longitude, countyName: selectedCounty?.countyName || post.countyName }
           : post
       ));
       setShowEditPostModal(false); setSelectedPost(null);
@@ -608,7 +612,7 @@ const openApplicantFeedback = async (applicant) => {
   // ── Modal openers ─────────────────────────────────────────────────────────
   const openEditModal = (post) => {
     setSelectedPost(post); setEditPostError('');
-    setPostFormData({ postID: post.postID, postTitle: post.postTitle || '', description: post.description || '', countyID: post.countyID ? String(post.countyID) : '', imagePath: getRawImagePath(post) || '' });
+    setPostFormData({ postID: post.postID, postTitle: post.postTitle || '', description: post.description || '', countyID: post.countyID ? String(post.countyID) : '', imagePath: getRawImagePath(post) || '', servicesRequiredCount: post.servicesRequiredCount || '', price: post.price || '', latitude: post.latitude || '', longitude: post.longitude || '' });
     if (counties.length === 0) fetchCounties();
     setShowEditPostModal(true);
   };
@@ -1610,17 +1614,25 @@ onClick={async () => {
               {[
                 { label: 'عنوان المنشور', key: 'postTitle', type: 'input', required: true },
                 { label: 'الوصف',          key: 'description', type: 'textarea', required: true },
+                { label: 'عدد المتطوعين المطلوبين', key: 'servicesRequiredCount', type: 'number', required: false },
+                { label: 'السعر', key: 'price', type: 'number', required: false },
+                { label: 'خط العرض (Latitude)', key: 'latitude', type: 'number', required: false },
+                { label: 'خط الطول (Longitude)', key: 'longitude', type: 'number', required: false },
               ].map(({ label, key, type, required }) => (
                 <div key={key}>
                   <label className="mb-1.5 block text-sm font-bold text-slate-700">
                     {label} {required && <span className="text-red-500">*</span>}
                   </label>
                   {type === 'textarea' ? (
-                    <textarea value={postFormData[key]} required rows={4}
+                    <textarea value={postFormData[key]} required={required} rows={4}
                       onChange={(e) => setPostFormData({ ...postFormData, [key]: e.target.value })}
                       className={`${INPUT} resize-none`} />
+                  ) : type === 'number' ? (
+                    <input type="number" value={postFormData[key]} required={required} step="any"
+                      onChange={(e) => setPostFormData({ ...postFormData, [key]: e.target.value })}
+                      className={INPUT} />
                   ) : (
-                    <input type="text" value={postFormData[key]} required
+                    <input type="text" value={postFormData[key]} required={required}
                       onChange={(e) => setPostFormData({ ...postFormData, [key]: e.target.value })}
                       className={INPUT} />
                   )}
