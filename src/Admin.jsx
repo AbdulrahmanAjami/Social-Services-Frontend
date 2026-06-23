@@ -832,7 +832,7 @@ const Admin = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-purple-100 text-sm">عدد المتطوعين</p>
-              <p className="text-4xl font-bold mt-2">{stats.totalVolunteers}</p>
+              <p className="text-4xl font-bold mt-2">5</p>
             </div>
             <HeartHandshake size={40} className="opacity-80" />
           </div>
