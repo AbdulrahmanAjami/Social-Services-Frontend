@@ -731,7 +731,7 @@ const openApplicantFeedback = async (applicant) => {
   if (loading && !formData.firstName) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-white" dir="rtl">
-        <div className="w-full max-w-4xl px-4 py-12"><CardSkeleton count={3} /></div>
+        <div className="w-full max-w-5xl px-4 py-12"><CardSkeleton count={3} /></div>
       </div>
     );
   }
@@ -1010,7 +1010,7 @@ onClick={async () => {
         </div>
       ))}
 
-      <div className="relative mx-auto max-w-xl">
+      <div className="relative mx-auto max-w-5xl">
         {/* Logo */}
         <div className="mb-6 flex items-center justify-center gap-3">
           <div className="flex size-10 items-center justify-center rounded-full border-2 border-emerald-800/20 bg-emerald-50">
@@ -1205,7 +1205,7 @@ onClick={async () => {
         {/* Voucher Success Modal */}
         {voucherModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-            <div className="w-full max-w-sm overflow-hidden rounded-3xl bg-white shadow-2xl text-center">
+            <div className="w-full max-w-5xl overflow-hidden rounded-3xl bg-white shadow-2xl text-center">
               <div className="bg-gradient-to-r from-emerald-500 to-teal-500 px-6 py-8">
                 <div className="text-5xl mb-3">🎉</div>
                 <h2 className="text-xl font-black text-white">مبروك!</h2>
@@ -1540,7 +1540,7 @@ onClick={async () => {
       {/* ━━━━ APPLICANTS MODAL ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
       {showApplicantsModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-          <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-3xl bg-white shadow-2xl">
+          <div className="max-h-[90vh] w-full max-w-5xl overflow-y-auto rounded-3xl bg-white shadow-2xl">
             <div className="sticky top-0 flex items-center justify-between rounded-t-3xl bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-5">
               <h2 className="text-lg font-black text-white">المتقدمون على: {selectedPost?.postTitle}</h2>
               <button onClick={() => setShowApplicantsModal(false)} className="flex size-9 items-center justify-center rounded-full bg-white/20 text-white transition hover:bg-white/30">
@@ -1634,7 +1634,7 @@ onClick={async () => {
       {/* ━━━━ APPLICANT FEEDBACK MODAL ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
       {showApplicantFeedbackModal && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md overflow-hidden rounded-3xl bg-white shadow-2xl">
+          <div className="w-full max-w-5xl overflow-hidden rounded-3xl bg-white shadow-2xl">
             <div className="flex items-center justify-between bg-emerald-600 px-6 py-4">
               <h2 className="text-lg font-black text-white">تقييم {selectedApplicantFeedback?.name}</h2>
               <button
@@ -1692,7 +1692,7 @@ onClick={async () => {
       {/* ━━━━ EDIT POST MODAL ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
       {showEditPostModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-3xl bg-white shadow-2xl">
+          <div className="max-h-[90vh] w-full max-w-5xl overflow-y-auto rounded-3xl bg-white shadow-2xl">
             <div className="sticky top-0 flex items-center justify-between rounded-t-3xl bg-emerald-600 px-6 py-4">
               <h2 className="text-lg font-black text-white">تعديل الخدمة</h2>
               <button onClick={() => { setShowEditPostModal(false); setSelectedPost(null); setEditPostError(''); setPostImageFile(null); }}
@@ -1785,7 +1785,7 @@ onClick={async () => {
       {/* ━━━━ COMPLETE MODAL ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
       {showCompleteModal && selectedPost && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-3xl bg-white p-8 text-center shadow-2xl">
+          <div className="w-full max-w-5xl rounded-3xl bg-white p-8 text-center shadow-2xl">
             <div className="mx-auto mb-5 flex size-16 items-center justify-center rounded-full bg-emerald-100">
               <CheckCircle className="size-8 text-emerald-600" />
             </div>
@@ -1811,7 +1811,7 @@ onClick={async () => {
       {/* ━━━━ FEEDBACK MODAL ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
       {showFeedbackModal && selectedPost && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-lg overflow-hidden rounded-3xl bg-white shadow-2xl">
+          <div className="w-full max-w-5xl overflow-hidden rounded-3xl bg-white shadow-2xl">
             <div className="bg-emerald-600 px-6 py-5">
               <h2 className="text-lg font-black text-white">⭐ تقييم المتطوعين</h2>
               <p className="text-sm text-emerald-100">قيّم كل متطوع شارك في: {selectedPost.postTitle}</p>
@@ -1878,7 +1878,7 @@ onClick={async () => {
       {/* ━━━━ DELETE MODAL ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
       {showDeleteModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-3xl bg-white p-8 text-center shadow-2xl">
+          <div className="w-full max-w-5xl rounded-3xl bg-white p-8 text-center shadow-2xl">
             <div className="mx-auto mb-5 flex size-16 items-center justify-center rounded-full bg-red-100">
               <Trash2 className="size-8 text-red-500" />
             </div>
@@ -1903,7 +1903,7 @@ onClick={async () => {
       {/* ━━━━ ACCEPT / REJECT MESSAGE MODAL ━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
       {showMessageModal && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-lg overflow-hidden rounded-3xl bg-white shadow-2xl">
+          <div className="w-full max-w-5xl overflow-hidden rounded-3xl bg-white shadow-2xl">
             <div className={`flex items-center justify-between px-6 py-5 ${messageData.action === 'accept' ? 'bg-emerald-600' : 'bg-red-500'}`}>
               <h2 className="text-lg font-black text-white">
                 {messageData.isEdit ? 'تعديل القرار' : messageData.action === 'accept' ? 'قبول المتقدم' : 'رفض المتقدم'}
