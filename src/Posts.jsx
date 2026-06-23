@@ -486,8 +486,15 @@ const handleUpdatePost = async (e) => {
 
   const handleApplyToService = async () => {
     if (!isLoggedIn) { setShowLoginRequired(true); return; }
-    if (!isVolunteer) { navigate('/volunteer-register'); return; }
     if (!applyingToPost) return;
+    
+    // ✅ Check if already applied
+    if (appliedPosts.has(applyingToPost.postID)) {
+      showToast('لا يمكنك التقديم على نفس الخدمة أكثر من مرة !', 'error');
+      return;
+    }
+    
+    if (!isVolunteer) { navigate('/volunteer-register'); return; }
     setLoading(true);
     try {
       const applicationData = { postID: applyingToPost.postID, description: applyMessage.trim() || null };

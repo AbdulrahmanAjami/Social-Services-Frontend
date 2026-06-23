@@ -198,24 +198,43 @@ const Mainpage = () => {
   // ── Play notification sound ──────────────────────────────────────────────
   const playNotificationSound = () => {
     try {
-      // Create a simple beep sound using Web Audio API
-      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-      const oscillator = audioContext.createOscillator();
-      const gainNode = audioContext.createGain();
+      // Try using Web Audio API with multiple attempts
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContext) {
+        console.log('🔔 AudioContext غير متاح');
+        return;
+      }
+      
+      const ctx = new AudioContext();
+      
+      // Ensure audio context is resumed (required by some browsers)
+      if (ctx.state === 'suspended') {
+        ctx.resume().catch(err => console.log('خطأ في تشغيل الصوت:', err));
+      }
 
-      oscillator.connect(gainNode);
-      gainNode.connect(audioContext.destination);
+      // Create notification beep
+      const now = ctx.currentTime;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      const filter = ctx.createBiquadFilter();
 
-      oscillator.frequency.value = 800; // 800 Hz beep
-      oscillator.type = 'sine';
+      osc.connect(filter);
+      filter.connect(gain);
+      gain.connect(ctx.destination);
 
-      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+      osc.frequency.setValueAtTime(880, now); // A5 note
+      osc.frequency.setValueAtTime(660, now + 0.1); // G5 note
+      osc.type = 'sine';
 
-      oscillator.start(audioContext.currentTime);
-      oscillator.stop(audioContext.currentTime + 0.5);
+      gain.gain.setValueAtTime(0.25, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+
+      osc.start(now);
+      osc.stop(now + 0.4);
+
+      console.log('🔔 تم تشغيل صوت الإشعار');
     } catch (err) {
-      console.log('صوت الإشعار غير متاح');
+      console.error('❌ خطأ في تشغيل صوت الإشعار:', err);
     }
   };
 
@@ -489,7 +508,6 @@ const Mainpage = () => {
                                   <p className="mt-1 text-xs text-slate-500">
                                     {(() => {
                                       const date = new Date(notification.createdDate);
-                                      date.setHours(date.getHours() - 2);
                                       return date.toLocaleString('ar-JO', {
                                         year: 'numeric',
                                         month: 'short',
