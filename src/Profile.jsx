@@ -759,7 +759,7 @@ const openApplicantFeedback = async (applicant) => {
 
       {/* ━━━━ HEADER ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
       <header className={`sticky top-0 z-50 border-b border-slate-200/60 transition-all duration-300 ${scrolled ? 'bg-white/95 shadow-sm backdrop-blur-md' : 'bg-white/80 backdrop-blur-md'}`}>
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-5 py-3 md:px-8">
+        <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-5 py-3 md:px-8">
           {/* Logo */}
           <button onClick={() => navigate('/')} className="flex items-center gap-3">
             <span className="relative flex size-11 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-700 shadow-lg shadow-emerald-500/25">
@@ -790,7 +790,7 @@ const openApplicantFeedback = async (applicant) => {
 
       {/* ━━━━ HERO BANNER ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
       <section className="bg-gradient-to-br from-emerald-600 via-emerald-700 to-teal-700 px-5 pb-24 pt-10 md:px-8">
-        <div className="mx-auto max-w-7xl">
+        <div className="mx-auto max-w-5xl">
           <span className="mb-2 inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-1.5 text-xs font-bold text-emerald-100">
             <Sparkles className="size-3.5" /> لوحة المتطوع
           </span>
@@ -799,7 +799,7 @@ const openApplicantFeedback = async (applicant) => {
       </section>
 
       {/* ━━━━ MAIN CONTENT ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
-      <div className="mx-auto max-w-7xl -mt-14 px-5 pb-16 md:px-8 relative z-10">
+      <div className="mx-auto max-w-5xl -mt-14 px-5 pb-16 md:px-8 relative z-10">
 
         {/* Profile card */}
         <div className="mb-6 mx-3 md:mx-6 lg:mx-8 overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-xl shadow-slate-900/5">
