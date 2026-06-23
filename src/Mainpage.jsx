@@ -213,9 +213,10 @@ const Mainpage = () => {
       let notifications = Array.isArray(data) ? data : [];
       notifications = notifications.map(notif => ({
         notificationID: notif.notificationID || notif.id || notif.ID,
-        message: notif.message || notif.content || notif.notificationText || notif.text || '',
+        title: notif.title || notif.subject || '',
+        description: notif.description || notif.message || notif.content || '',
         createdDate: notif.createdDate || notif.createdAt || notif.dateCreated || new Date().toISOString(),
-        isRead: notif.isRead !== undefined ? notif.isRead : notif.read !== undefined ? notif.read : false,
+        isViewed: notif.isViewed !== undefined ? notif.isViewed : notif.isRead !== undefined ? notif.isRead : false,
       }));
       
       console.log('📊 عدد الإشعارات بعد المعالجة:', notifications.length);
@@ -247,7 +248,7 @@ const Mainpage = () => {
       // تحديث الحالة محلياً
       setNotifications((prev) =>
         prev.map((notif) =>
-          notif.notificationID === notificationID ? { ...notif, isRead: true } : notif
+          notif.notificationID === notificationID ? { ...notif, isViewed: true } : notif
         )
       );
     } catch (err) {
@@ -413,7 +414,7 @@ const Mainpage = () => {
                     className="relative hidden size-10 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900 sm:flex"
                   >
                     <Bell className="size-5" />
-                    {notifications.some((n) => !n.isRead) && (
+                    {notifications.some((n) => !n.isViewed) && (
                       <span className="absolute right-2 top-2 size-2 rounded-full bg-amber-500 animate-pulse" />
                     )}
                   </button>
@@ -437,13 +438,22 @@ const Mainpage = () => {
                               key={notification.notificationID}
                               onClick={() => handleViewNotification(notification.notificationID)}
                               className={`cursor-pointer p-4 transition-colors hover:bg-slate-50 ${
-                                !notification.isRead ? 'bg-emerald-50' : ''
+                                !notification.isViewed ? 'bg-emerald-50' : ''
                               }`}
                             >
                               <div className="flex items-start justify-between gap-2">
                                 <div className="flex-1">
-                                  <p className={`text-sm ${!notification.isRead ? 'font-bold text-slate-900' : 'text-slate-700'}`}>
-                                    {notification.message}
+                                  {notification.title && (
+                                    <p className={`text-xs font-semibold mb-1 ${
+                                      !notification.isViewed ? 'text-emerald-700' : 'text-slate-600'
+                                    }`}>
+                                      {notification.title}
+                                    </p>
+                                  )}
+                                  <p className={`text-sm ${
+                                    !notification.isViewed ? 'font-bold text-slate-900' : 'text-slate-700'
+                                  }`}>
+                                    {notification.description}
                                   </p>
                                   <p className="mt-1 text-xs text-slate-500">
                                     {new Date(notification.createdDate).toLocaleDateString('ar-JO', {
@@ -454,7 +464,7 @@ const Mainpage = () => {
                                       minute: '2-digit',
                                     })}
                                   </p>
-                                  {!notification.isRead && (
+                                  {!notification.isViewed && (
                                     <span className="mt-2 inline-block text-xs font-semibold text-emerald-600 bg-emerald-100 px-2 py-1 rounded">
                                       جديد
                                     </span>
