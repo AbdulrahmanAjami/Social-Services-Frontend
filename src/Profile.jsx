@@ -706,7 +706,7 @@ const openApplicantFeedback = async (applicant) => {
       <div className="mx-auto max-w-7xl -mt-14 px-5 pb-16 md:px-8 relative z-10">
 
         {/* Profile card */}
-        <div className="mb-6 overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-xl shadow-slate-900/5">
+        <div className="mb-6 mx-3 md:mx-6 lg:mx-8 overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-xl shadow-slate-900/5">
           <div className="flex flex-col gap-6 p-6 md:flex-row md:items-center md:p-8">
             {/* Avatar */}
             <div className="relative shrink-0">
@@ -761,7 +761,7 @@ const openApplicantFeedback = async (applicant) => {
         </div>
 
         {/* Stats row */}
-        <div className="mb-8 grid grid-cols-1 gap-5 md:grid-cols-3">
+        <div className="mb-8 mx-3 md:mx-6 lg:mx-8 grid grid-cols-1 gap-5 md:grid-cols-3">
           {[
             { label: 'نقطة تطوع',    value: userStats.points,             sub: 'النقاط',      color: 'from-violet-500 to-purple-600', bgColor: 'bg-violet-50', borderColor: 'border-violet-200', lineColor: 'bg-violet-500', text: 'text-violet-600', icon: Sparkles },
             { label: 'خدمة تطوعية',  value: userStats.participationCount, sub: 'المشاركات',   color: 'from-emerald-500 to-teal-600',  bgColor: 'bg-emerald-50', borderColor: 'border-emerald-200', lineColor: 'bg-emerald-500', text: 'text-emerald-600', icon: CheckCircle },
@@ -806,7 +806,7 @@ const openApplicantFeedback = async (applicant) => {
 
         {/* ━━━━ CERTIFICATE SYSTEM ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
         {certificateEligible && !certificateIssued && (
-          <div className="mb-6 overflow-hidden rounded-3xl border-2 border-amber-200 bg-gradient-to-r from-amber-50 to-yellow-50 shadow-sm">
+          <div className="mb-6 mx-3 md:mx-6 lg:mx-8 overflow-hidden rounded-3xl border-2 border-amber-200 bg-gradient-to-r from-amber-50 to-yellow-50 shadow-sm">
             <div className="px-6 py-5">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -863,7 +863,7 @@ onClick={async () => {
         )}
 
 {certificateIssued && certificate && (
-  <div className="mb-6 overflow-hidden rounded-3xl border-2 border-emerald-200 bg-gradient-to-r from-emerald-50 to-teal-50 shadow-sm certificate-print">
+  <div className="mb-6 mx-3 md:mx-6 lg:mx-8 overflow-hidden rounded-3xl border-2 border-emerald-200 bg-gradient-to-r from-emerald-50 to-teal-50 shadow-sm certificate-print">
     <div className="px-6 py-5">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -996,7 +996,7 @@ onClick={async () => {
 )}
 
         {!certificateEligible && !certificateIssued && (
-          <div className="mb-6 overflow-hidden rounded-3xl border-2 border-slate-200 bg-gradient-to-r from-slate-50 to-gray-50 shadow-sm">
+          <div className="mb-6 mx-3 md:mx-6 lg:mx-8 overflow-hidden rounded-3xl border-2 border-slate-200 bg-gradient-to-r from-slate-50 to-gray-50 shadow-sm">
             <div className="px-6 py-5">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -1021,7 +1021,7 @@ onClick={async () => {
         )}
 
         {/* ━━━━ VOUCHERS SECTION ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
-        <div className="mb-6 overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-sm">
+        <div className="mb-6 mx-3 md:mx-6 lg:mx-8 overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-sm">
           <div className="border-b border-slate-100 px-6 py-5">
             <div className="flex items-center justify-between">
               <div>
@@ -1138,7 +1138,7 @@ onClick={async () => {
         {success && <div className="mb-4"><Alert type="success">{success}</Alert></div>}
 
         {/* Layout: sidebar nav + main */}
-        <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-start mx-3 md:mx-6 lg:mx-8">
 
           {/* Sidebar nav */}
           <nav className="w-full shrink-0 overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm lg:w-64">
