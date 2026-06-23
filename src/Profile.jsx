@@ -477,7 +477,6 @@ const handleUpdate = async () => {
       Email: formData.email,
       Phone: formData.phone,
       Age: parseInt(formData.age) || 0,
-      Imagepath: formData.imagepath,
     };
 
     const form = new FormData();
@@ -490,7 +489,8 @@ const handleUpdate = async () => {
       form.append('Image', imageFile);
     }
 
-    const response = await fetch(`${API_BASE_URL}/User/Update Personal Details?imageChanged=${imageChanged}`, {
+    const queryParam = imageChanged ? 'true' : 'false';
+    const response = await fetch(`${API_BASE_URL}/User/Update Personal Details?imageChanged=${queryParam}`, {
       method: 'PATCH',
       headers: { Authorization: `Bearer ${accessToken}` },
       // Note: no 'Content-Type' header here — the browser sets the correct
@@ -498,12 +498,16 @@ const handleUpdate = async () => {
       body: form,
     });
 
-    if (!response.ok) throw new Error('Failed to update profile');
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to update profile');
+    }
 
     setSuccess('تم تحديث الملف الشخصي بنجاح!');
     setIsEditing(false);
     updateUser({ ...user, ...formData });
     setImageFile(null);
+    setImagePreview(null);
     // Re-fetch user details to get the updated image path from the server
     await fetchUserDetails();
     setTimeout(() => setSuccess(''), 3000);
