@@ -251,15 +251,22 @@ const Profile = () => {
     finally { setPostImageUploading(false); e.target.value = ''; }
   };
 
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
+  const handleImageChange = async (e) => {
+    const file = e.target.files?.[0];
     if (!file) return;
-    if (!file.type.startsWith('image/')) { setError('يرجى اختيار صورة فقط!'); return; }
-    if (file.size > 5 * 1024 * 1024) { setError('حجم الصورة يجب أن يكون أقل من 5MB'); return; }
-    setImageFile(file);
-    const reader = new FileReader();
-    reader.onloadend = () => setImagePreview(reader.result);
-    reader.readAsDataURL(file);
+    try {
+      setImageFile(file);
+      const dataUrl = await fileToCompressedDataUrl(file);
+      setImagePreview(dataUrl);
+      setError('');
+    } catch (err) {
+      setError(err.message || 'تعذّر تحميل الصورة');
+      setImageFile(null);
+      setImagePreview(null);
+    }
+    finally {
+      e.target.value = '';
+    }
   };
 
   // ── API calls (identical to original) ────────────────────────────────────
