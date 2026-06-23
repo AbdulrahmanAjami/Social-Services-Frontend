@@ -13,11 +13,72 @@ import {
   dispatchPostCompleted, isPostComplete, isPostLocked, normalizePost,
   getPostImage, getRawImagePath, getImagePreviewUrl, fileToCompressedDataUrl, DEFAULT_POST_IMAGE,
 } from './postUtils';
+import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 
 const API_BASE_URL = 'https://yousefalhamad-001-site1.ltempurl.com/api';
 
 // ─── Shared input class ───────────────────────────────────────────────────────
 const INPUT = 'w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 disabled:bg-slate-50 disabled:opacity-60';
+
+// ─── Map Picker Component ─────────────────────────────────────────────────────
+function MapPicker({ latitude, longitude, onChange }) {
+  const defaultLat = latitude || 31.9454;
+  const defaultLng = longitude || 35.9284;
+  
+  function LocationMarker() {
+    const map = useMapEvents({
+      click(e) {
+        onChange({ latitude: e.latlng.lat, longitude: e.latlng.lng });
+      },
+    });
+    return latitude && longitude ? (
+      <Marker position={[latitude, longitude]} icon={L.icon({
+        iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
+        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+        iconSize: [25, 41],
+        shadowSize: [41, 41],
+        iconAnchor: [12, 41],
+        shadowAnchor: [12, 41],
+        popupAnchor: [1, -34],
+      })}>
+        <Popup>
+          <div className="text-xs">
+            <p className="font-bold">الموقع المحدد</p>
+            <p>العرض: {latitude.toFixed(4)}</p>
+            <p>الطول: {longitude.toFixed(4)}</p>
+          </div>
+        </Popup>
+      </Marker>
+    ) : null;
+  }
+
+  return (
+    <div className="space-y-2">
+      <div className="h-72 w-full rounded-2xl overflow-hidden border border-slate-200 shadow-sm">
+        <MapContainer center={[defaultLat, defaultLng]} zoom={13} style={{ height: '100%', width: '100%' }}>
+          <TileLayer
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          />
+          <LocationMarker />
+        </MapContainer>
+      </div>
+      <p className="text-xs text-slate-500 text-right">🖱️ اضغط على الخريطة لاختيار الموقع</p>
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="block text-xs font-bold text-slate-600 mb-1">خط العرض</label>
+          <input type="number" value={latitude || ''} disabled step="0.0001" className={`${INPUT} bg-slate-50`} />
+        </div>
+        <div>
+          <label className="block text-xs font-bold text-slate-600 mb-1">خط الطول</label>
+          <input type="number" value={longitude || ''} disabled step="0.0001" className={`${INPUT} bg-slate-50`} />
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // ─── Alert component ──────────────────────────────────────────────────────────
 function Alert({ type, children }) {
@@ -1615,9 +1676,6 @@ onClick={async () => {
                 { label: 'عنوان المنشور', key: 'postTitle', type: 'input', required: true },
                 { label: 'الوصف',          key: 'description', type: 'textarea', required: true },
                 { label: 'عدد المتطوعين المطلوبين', key: 'servicesRequiredCount', type: 'number', required: false },
-                { label: 'السعر', key: 'price', type: 'number', required: false },
-                { label: 'خط العرض (Latitude)', key: 'latitude', type: 'number', required: false },
-                { label: 'خط الطول (Longitude)', key: 'longitude', type: 'number', required: false },
               ].map(({ label, key, type, required }) => (
                 <div key={key}>
                   <label className="mb-1.5 block text-sm font-bold text-slate-700">
@@ -1647,6 +1705,15 @@ onClick={async () => {
                   <option value="">{loadingCounties ? 'جاري التحميل...' : '-- اختر المنطقة --'}</option>
                   {counties.map(c => <option key={c.countyID} value={c.countyID}>{c.countyName}</option>)}
                 </select>
+              </div>
+
+              <div>
+                <label className="mb-1.5 block text-sm font-bold text-slate-700">📍 حدد الموقع على الخريطة</label>
+                <MapPicker 
+                  latitude={Number(postFormData.latitude) || 0} 
+                  longitude={Number(postFormData.longitude) || 0}
+                  onChange={(coords) => setPostFormData({ ...postFormData, latitude: coords.latitude, longitude: coords.longitude })}
+                />
               </div>
 
               <div>
