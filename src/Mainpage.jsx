@@ -169,10 +169,15 @@ const Mainpage = () => {
   const [scrolled, setScrolled]             = useState(false);
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [userMenuOpen, setUserMenuOpen]     = useState(false);
+  const [showNotificationsDropdown, setShowNotificationsDropdown] = useState(false);
+  const [notifications, setNotifications]   = useState([]);
+  const [notificationsLoading, setNotificationsLoading] = useState(false);
+  const [notificationsError, setNotificationsError] = useState('');
   const userRef = useRef(null);
+  const notificationsRef = useRef(null);
 
   // ── same auth logic as original ──────────────────────────────────────────
-  const { user, logout } = useAuth();
+  const { user, logout, accessToken } = useAuth();
   const isLoggedIn = !!user;
   const navigate   = useNavigate();
 
@@ -189,7 +194,88 @@ const Mainpage = () => {
     navigate('/');
   };
 
+  // ── Notifications API handlers ───────────────────────────────────────────
+  const API_BASE_URL = 'https://yousefalhamad-001-site1.ltempurl.com/api';
+
+  const fetchNotifications = async () => {
+    if (!user?.username || !accessToken) return;
+    setNotificationsLoading(true);
+    setNotificationsError('');
+    try {
+      const response = await fetch(`${API_BASE_URL}/Notifications/Get Notifications`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      if (!response.ok) throw new Error('فشل جلب الإشعارات');
+      const data = await response.json();
+      setNotifications(Array.isArray(data) ? data : []);
+    } catch (err) {
+      setNotificationsError(err.message);
+      setNotifications([]);
+    } finally {
+      setNotificationsLoading(false);
+    }
+  };
+
+  const handleViewNotification = async (notificationID) => {
+    if (!accessToken) return;
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/Notifications/View Notification?notificationID=${notificationID}`,
+        {
+          method: 'PUT',
+          headers: { Authorization: `Bearer ${accessToken}` },
+        }
+      );
+      if (!response.ok) throw new Error('فشل تحديث الإشعار');
+      // تحديث الحالة محلياً
+      setNotifications((prev) =>
+        prev.map((notif) =>
+          notif.notificationID === notificationID ? { ...notif, isRead: true } : notif
+        )
+      );
+    } catch (err) {
+      console.error('خطأ في تحديث الإشعار:', err);
+    }
+  };
+
+  const handleDeleteNotification = async (notificationID) => {
+    if (!accessToken) return;
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/Notifications/Delete Notification?notificationID=${notificationID}`,
+        {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${accessToken}` },
+        }
+      );
+      if (!response.ok) throw new Error('فشل حذف الإشعار');
+      // حذف الإشعار من الحالة
+      setNotifications((prev) => prev.filter((n) => n.notificationID !== notificationID));
+    } catch (err) {
+      console.error('خطأ في حذف الإشعار:', err);
+    }
+  };
+
   // ── effects ───────────────────────────────────────────────────────────────
+  // جلب الإشعارات عند تحميل الصفحة
+  useEffect(() => {
+    if (isLoggedIn) {
+      fetchNotifications();
+      // جلب الإشعارات كل 30 ثانية
+      const interval = setInterval(fetchNotifications, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [isLoggedIn, accessToken]);
+
+  // إغلاق dropdown الإشعارات عند الضغط خارجه
+  useEffect(() => {
+    const onClick = (e) => {
+      if (showNotificationsDropdown && notificationsRef.current && !notificationsRef.current.contains(e.target))
+        setShowNotificationsDropdown(false);
+    };
+    document.addEventListener('mousedown', onClick);
+    return () => document.removeEventListener('mousedown', onClick);
+  }, [showNotificationsDropdown]);
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 50);
     window.addEventListener('scroll', onScroll);
@@ -298,10 +384,77 @@ const Mainpage = () => {
             {isLoggedIn ? (
               <>
                 {/* Notification bell */}
-                <button className="relative hidden size-10 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900 sm:flex">
-                  <Bell className="size-5" />
-                  <span className="absolute right-2 top-2 size-2 rounded-full bg-amber-500" />
-                </button>
+                <div className="relative" ref={notificationsRef}>
+                  <button 
+                    onClick={() => setShowNotificationsDropdown((o) => !o)}
+                    className="relative hidden size-10 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900 sm:flex"
+                  >
+                    <Bell className="size-5" />
+                    {notifications.some((n) => !n.isRead) && (
+                      <span className="absolute right-2 top-2 size-2 rounded-full bg-amber-500 animate-pulse" />
+                    )}
+                  </button>
+
+                  {showNotificationsDropdown && (
+                    <div className="absolute left-0 top-14 w-80 origin-top-left overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl z-50 max-h-96 overflow-y-auto">
+                      {notificationsLoading ? (
+                        <div className="flex items-center justify-center p-6">
+                          <div className="text-sm text-slate-500">جاري تحميل الإشعارات...</div>
+                        </div>
+                      ) : notificationsError ? (
+                        <div className="p-4 text-sm text-red-600 bg-red-50">{notificationsError}</div>
+                      ) : notifications.length === 0 ? (
+                        <div className="flex items-center justify-center p-6">
+                          <div className="text-sm text-slate-500">لا توجد إشعارات</div>
+                        </div>
+                      ) : (
+                        <div className="divide-y divide-slate-100">
+                          {notifications.map((notification) => (
+                            <div
+                              key={notification.notificationID}
+                              onClick={() => handleViewNotification(notification.notificationID)}
+                              className={`cursor-pointer p-4 transition-colors hover:bg-slate-50 ${
+                                !notification.isRead ? 'bg-emerald-50' : ''
+                              }`}
+                            >
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="flex-1">
+                                  <p className={`text-sm ${!notification.isRead ? 'font-bold text-slate-900' : 'text-slate-700'}`}>
+                                    {notification.message}
+                                  </p>
+                                  <p className="mt-1 text-xs text-slate-500">
+                                    {new Date(notification.createdDate).toLocaleDateString('ar-JO', {
+                                      year: 'numeric',
+                                      month: 'short',
+                                      day: 'numeric',
+                                      hour: '2-digit',
+                                      minute: '2-digit',
+                                    })}
+                                  </p>
+                                  {!notification.isRead && (
+                                    <span className="mt-2 inline-block text-xs font-semibold text-emerald-600 bg-emerald-100 px-2 py-1 rounded">
+                                      جديد
+                                    </span>
+                                  )}
+                                </div>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDeleteNotification(notification.notificationID);
+                                  }}
+                                  className="text-slate-400 hover:text-red-500 transition-colors p-1"
+                                  title="حذف"
+                                >
+                                  ✕
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
 
                 <button
                   onClick={() => setUserMenuOpen((o) => !o)}
