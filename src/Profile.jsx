@@ -540,27 +540,47 @@ const handleDeletePost = async () => {
     const userID = getCurrentUserID();
     if (!userID) { setEditPostError('تعذر تحديد المستخدم. أعد تسجيل الدخول'); return; }
     setLoading(true); setEditPostError(''); setError('');
-    const payload = {
-      postID: postFormData.postID, userID,
-      postTitle: postFormData.postTitle.trim(), description: postFormData.description.trim(),
-      countyID: Number(postFormData.countyID), imagePath: postFormData.imagePath?.trim() || '',
-      servicesRequiredCount: Number(postFormData.servicesRequiredCount) || 0,
-      price: Number(postFormData.price) || 0,
-      latitude: Number(postFormData.latitude) || 0,
-      longitude: Number(postFormData.longitude) || 0,
+    
+    const data = {
+      PostID: postFormData.postID,
+      UserID: userID,
+      PostTitle: postFormData.postTitle.trim(),
+      Description: postFormData.description.trim(),
+      CountyID: Number(postFormData.countyID),
+      ImagePath: postFormData.imagePath?.trim() || '',
+      ServicesRequiredCount: Number(postFormData.servicesRequiredCount) || 0,
+      Price: Number(postFormData.price) || 0,
+      Latitude: Number(postFormData.latitude) || 0,
+      Longitude: Number(postFormData.longitude) || 0,
     };
+
+    const form = new FormData();
+    Object.entries(data).forEach(([key, value]) => {
+      form.append(`data.${key}`, value ?? '');
+    });
+
     try {
-      await postsAPI.updatePost(payload);
-      const selectedCounty = counties.find(c => c.countyID === payload.countyID);
+      const response = await fetch(`${API_BASE_URL}/Posts/Update Post`, {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${accessToken}` },
+        body: form,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'فشل تحديث الخدمة');
+      }
+
+      const selectedCounty = counties.find(c => c.countyID === data.CountyID);
       setUserPosts(prev => prev.map(post =>
-        post.postID === payload.postID
-          ? { ...post, postTitle: payload.postTitle, description: payload.description, imagePath: payload.imagePath, countyID: payload.countyID, servicesRequiredCount: payload.servicesRequiredCount, price: payload.price, latitude: payload.latitude, longitude: payload.longitude, countyName: selectedCounty?.countyName || post.countyName }
+        post.postID === data.PostID
+          ? { ...post, postTitle: data.PostTitle, description: data.Description, imagePath: data.ImagePath, countyID: data.CountyID, servicesRequiredCount: data.ServicesRequiredCount, price: data.Price, latitude: data.Latitude, longitude: data.Longitude, countyName: selectedCounty?.countyName || post.countyName }
           : post
       ));
       setShowEditPostModal(false); setSelectedPost(null);
       setSuccess('✅ تم تحديث الخدمة بنجاح'); setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
-      const msg = err.response?.data?.message || (typeof err.response?.data === 'string' ? err.response.data : null) || err.message || 'فشل تحديث الخدمة';
+      const msg = err.message || 'فشل تحديث الخدمة';
       setEditPostError(msg); setError('❌ ' + msg); setTimeout(() => setError(''), 5000);
     } finally { setLoading(false); }
   };
