@@ -456,7 +456,7 @@ const Mainpage = () => {
                                     {notification.description}
                                   </p>
                                   <p className="mt-1 text-xs text-slate-500">
-                                    {new Date(notification.createdDate).toLocaleDateString('ar-JO', {
+                                    {new Date(notification.createdDate).toLocaleString('ar-JO', {
                                       year: 'numeric',
                                       month: 'short',
                                       day: 'numeric',

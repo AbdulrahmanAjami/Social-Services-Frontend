@@ -906,7 +906,8 @@ const openApplicantFeedback = async (applicant) => {
         </div>
       </div>
 
-        {/* ━━━━ CERTIFICATE SYSTEM
+      {/* ━━━━ CONTAINER WRAPPER FOR ALL SECTIONS ━━━━━━━━━━━━━━━━━━━ */}
+      <div className="mx-auto max-w-5xl px-5 md:px-8 pb-16">
 
         {/* ━━━━ CERTIFICATE SYSTEM ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
         {certificateEligible && !certificateIssued && (
@@ -1963,6 +1964,9 @@ onClick={async () => {
           </div>
         </div>
       )}
+
+      </div>
+      {/* ━━━━ END CONTAINER WRAPPER ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
 
       </div>);
 };
