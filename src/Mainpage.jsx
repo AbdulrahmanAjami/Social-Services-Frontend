@@ -207,8 +207,25 @@ const Mainpage = () => {
       });
       if (!response.ok) throw new Error('فشل جلب الإشعارات');
       const data = await response.json();
-      setNotifications(Array.isArray(data) ? data : []);
+      console.log('🔔 البيانات الخام من الـ API:', data);
+      
+      // تحويل البيانات إلى الصيغة المتوقعة
+      let notifications = Array.isArray(data) ? data : [];
+      notifications = notifications.map(notif => ({
+        notificationID: notif.notificationID || notif.id || notif.ID,
+        message: notif.message || notif.content || notif.notificationText || notif.text || '',
+        createdDate: notif.createdDate || notif.createdAt || notif.dateCreated || new Date().toISOString(),
+        isRead: notif.isRead !== undefined ? notif.isRead : notif.read !== undefined ? notif.read : false,
+      }));
+      
+      console.log('📊 عدد الإشعارات بعد المعالجة:', notifications.length);
+      if (notifications.length > 0) {
+        console.log('📝 أول إشعار بعد المعالجة:', notifications[0]);
+      }
+      
+      setNotifications(notifications);
     } catch (err) {
+      console.error('❌ خطأ في جلب الإشعارات:', err);
       setNotificationsError(err.message);
       setNotifications([]);
     } finally {
@@ -260,10 +277,16 @@ const Mainpage = () => {
   // جلب الإشعارات عند تحميل الصفحة
   useEffect(() => {
     if (isLoggedIn) {
+      console.log('✅ المستخدم مسجل دخول، جاري جلب الإشعارات...');
       fetchNotifications();
       // جلب الإشعارات كل 30 ثانية
-      const interval = setInterval(fetchNotifications, 30000);
+      const interval = setInterval(() => {
+        console.log('🔄 تحديث الإشعارات...');
+        fetchNotifications();
+      }, 30000);
       return () => clearInterval(interval);
+    } else {
+      console.log('❌ المستخدم غير مسجل دخول');
     }
   }, [isLoggedIn, accessToken]);
 
