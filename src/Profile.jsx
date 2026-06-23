@@ -507,8 +507,9 @@ const handleUpdate = async () => {
     setIsEditing(false);
     updateUser({ ...user, ...formData });
     setImageFile(null);
-    setImagePreview(null);
     // Re-fetch user details to get the updated image path from the server
+    // Wait a moment to ensure the server has processed the image
+    await new Promise(resolve => setTimeout(resolve, 500));
     await fetchUserDetails();
     setTimeout(() => setSuccess(''), 3000);
   } catch (err) {

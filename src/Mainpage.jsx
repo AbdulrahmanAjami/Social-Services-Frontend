@@ -324,7 +324,7 @@ const Mainpage = () => {
                         className="size-10 rounded-full object-cover"
                       />
                       <div className="flex flex-col leading-tight">
-                        <span className="text-sm font-bold">{user?.displayName || 'مستخدم'}</span>
+                        <span className="text-sm font-bold">{user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : user?.username || 'مستخدم'}</span>
                         <span className="text-xs text-slate-500">{user?.email}</span>
                       </div>
                     </div>
