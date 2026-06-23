@@ -34,6 +34,8 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from './AuthContext';
 import { motion } from 'framer-motion';
 
+
+const API_BASE_URL = 'https://yousefalhamad-001-site1.ltempurl.com/api';
 // ---------------------------------------------------------------------------
 // Animation helpers (same as original)
 // ---------------------------------------------------------------------------

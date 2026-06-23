@@ -68,7 +68,7 @@ const AdminLogin = () => {
           <div className="inline-flex items-center justify-center w-16 h-16 bg-emerald-600 rounded-2xl shadow-lg mb-3">
             <HeartHandshake className="w-8 h-8 text-white" />
           </div>
-          <h2 className="text-2xl font-extrabold text-slate-800">بِرّ</h2>
+          <h2 className="text-2xl font-extrabold text-slate-800">شارك</h2>
           <p className="text-slate-500 mt-1">أهلاً وسهلاً 👋</p>
         </div>
 
